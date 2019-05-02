@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bug Tracker Application</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+
+</head> 
+<body>
+    <br>
+<div class="container">
+    <div class="jumbotron text-center">
+        <h1>Bug Tracker Application</h1>
+    </div>
+
+    <div class="row" id="menu">
+            <div class="card" style="width: 18rem;"> <img class="card-img-top" src="./img/user.png" alt="Card image cap"> <div class="card-body"> <h5 class="card-title" >User</h5> <p class="card-text">Some quick example text to build on the card title and make up the bulk of.></p> <a href="javascript:showUserRegion();"class ="btn btn-primary" id ="btnadduser">Add User</a> </div></div>
+            <div class="card" style="width: 18rem;"> <img class="card-img-top" src="./img/category.png" alt="Card image cap"> <div class="card-body"> <h5 class="card-title">Category</h5> <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p> <a href="javascript:showCategoryRegion();" class="btn btn-primary" id="btnaddcategory">Add Category</a> </div> </div>
+            <div class="card" style="width: 18rem;"> <img class="card-img-top" src="./img/status.png" alt="Card image cap"> <div class="card-body"> <h5 class="card-title">Status</h5> <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p> <a href="javascript:showStatusRegion();" class="btn btn-primary" id="btnaddstatus">Add Status</a> </div> </div>
+            <div class="card" style="width: 18rem;"> <img class="card-img-top" src="./img/browser.jpg" alt="Card image cap"> <div class="card-body"> <h5 class="card-title">Browser</h5> <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p> <a href="javascript:showBrowserRegion();" class="btn btn-primary" id="btnaddbrowser">Add browser</a> </div> </div>
+            <div class="card" style="width: 18rem;"> <img class="card-img-top" src="./img/os.png" alt="Card image cap"> <div class="card-body"> <h5 class="card-title">Operating system</h5> <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p> <a href="javascript:showOsRegion();" class="btn btn-primary" id="btnaddos">Add OS Name</a> </div> </div>
+            <div class="card" style="width: 18rem;"> <img class="card-img-top" src="./img/priority.jpg" alt="Card image cap"> <div class="card-body"> <h5 class="card-title">Priority</h5> <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p> <a href="javascript:showPriorityRegion();" class="btn btn-primary" id="btnaddpriority">Add Priority</a> </div> </div>
+            <div class="card" style="width: 18rem;"> <img class="card-img-top" src="./img/bug stoarge.jpg" alt="Card image cap"> <div class="card-body"> <h5 class="card-title">BUG</h5> <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p> <a href="javascript:showBugRegion();" class="btn btn-primary" id="btnaddbug">Bug</a></div></div>
+            <div class="card" style="width: 18rem;"> <img class="card-img-top" src="./img/bug-tracking.png" alt="Card image cap"> <div class="card-body"> <h5 class="card-title">Bug Search</h5> <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p> <a href="javascript:showBugSearchRegion();" class="btn btn-primary" id="btnsearchbug">Bug Search</a></div></div>
+    
+    
+    </div>
+    
+  
+                 <!--------- User Div start-------------->
+   
+    <div class="col" id="userDiv">
+        <div id="alertmsg"></div>
+        
+        <div class="form-group">
+            <label class ="control-label col-sm-3">First Name</label>
+            <div class="col-sm-8">
+                <input type="hidden" id="hdnuserid">
+                <input type="text" class="form-control" id="first_name" placeholder="First name">
+            </div>
+        </div>
+        
+        <div class="form-group">
+                <label class ="control-label col-sm-3">Last Name</label>
+                <div class="col-sm-8">
+                    <input type="text" class="form-control" id="last_name" placeholder="Last name">
+                </div>
+        </div>
+        
+        <div class="form-group">
+                <label class ="control-label col-sm-3">User ID</label>
+                <div class="col-sm-8">
+                    <input type="text" class="form-control" id="user_id" placeholder="User ID">
+                </div>
+        </div>
+
+        <div class="form-group">
+            <label class ="control-label col-sm-3">Password</label>
+            <div class="col-sm-8">
+                <input type="password" class="form-control" id="pwd" placeholder="Password">
+            </div>
+        </div>
+
+        
+        
+        
+        <div class="form-group">
+                <lable class ="control-label col-sm-3"></lable>
+                <div class="col-sm-8">                   
+                    <button type="button" class="btn btn-danger" onclick="cancel('#userDiv');">Cancel</button>
+                    <button type="button" class="btn btn-success" onclick="saveUser()">Save</button>
+
+                </div>
+        </div>
+        
+
+        <table class="table table-sm-3">
+                    <tr>
+                        <td colspan="2" scope="col-sm-3">
+                            <h3>Users</h3>
+                        <td scope="col-sm-3" colspan="2"><input type="text" class="form-control" id="user_search" placeholder="Search"></td>
+                    </tr>
+        </table>
+    
+        <table class="table table-sm-3" id="CatReport">
+
+        </table>
+ 
+        <div id="searchResult"></div>
+
+    </div>
+ 
+    <!------------User Div End----------------->
+
+    <!--- Category name start-->
+    <div class = "col" id="categoryDiv">
+        <div id="alertmsg2"></div>
+        <div class="form-group">
+            <label class ="control-label col-sm-3">Category Name</label>
+            <div class="col-sm-8">
+                <input type="hidden" id="hdncategoryid">
+                <input type="text" class="form-control" id="category_name" placeholder="Category Name">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <lable class ="control-label col-sm-3"></lable>
+            <div class="col-sm-8">
+                <button type="button" class="btn btn-danger" onclick="cancel('#categoryDiv');">Cancel</button>
+                <button type="button" class="btn btn-success" onclick="saveCategory()">Save</button>
+            </div>
+        
+        </div>
+        
+        
+        <table class="table table-sm-3">
+                    <tr>
+                        
+                        <td colspan="2" scope="col-sm-3">
+                            <h3>Category</h3>
+                        <td scope="col-sm-3" colspan="2"><input type="text" class="form-control" id="category_search" placeholder="Search"></td>
+                    
+                    </tr>
+        </table>
+
+        <table class="table table-sm-3" id="categoryReport">
+
+        </table>
+
+        <div id="categorysearchResult"></div>
+
+    </div>
+    <!----------- Category Name end --------->
+
+    <!--------- Status Name Start------------>
+    <div class ="col" id="statusDiv">
+        <div id="alertmsg3"></div>
+            <div class ="form- group">
+                <label class ="control-label col-sm-3">Status Name</label>
+                <div class="col-sm-8">
+                        <input type="hidden" id="hdnstatusid">
+                    <input type="text" class="form-control" id="status_name" placeholder="Status Name">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <lable class ="control-label col-sm-3"></lable>
+                <div class="col-sm-8">
+                    <button type="button" class="btn btn-danger" onclick="cancel('#statusDiv');">Cancel</button>
+                    <button type="button" class="btn btn-success" onclick="saveStatus()">Save</button>
+                
+                </div>
+                
+            </div>
+
+            <table class="table table-sm-3">
+                        <tr>
+                            
+                            <td colspan="2" scope="col-sm-3">
+                                <h3>Status</h3>
+                            <td scope="col-sm-3" colspan="2"><input type="text" class="form-control" id="status_search" placeholder="Search"></td>
+                    
+                        </tr>
+            </table>
+
+            <table class="table table-sm-3" id="statusReport">
+
+            </table>
+
+            <div id="statussearchResult"></div>
+        
+        </div>
+        
+    <!-----------------------Status End---------------------------------->
+    
+    
+    <!----------------Brwoser Starts-------------------------------------->
+    <div class ="col" id="browserDiv">
+        <div id="alertmsg4"></div>
+            <div class ="form- group">
+                <label class ="control-label col-sm-3">Browser Name</label>
+                <div class="col-sm-8">
+                        <input type="hidden" id="hdnbrowserid">
+                    <input type="text" class="form-control" id="browser" placeholder="Browser Name">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <lable class ="control-label col-sm-3"></lable>
+                <div class="col-sm-8">
+                    <button type="button" class="btn btn-danger" onclick="cancel('#browserDiv');">Cancel</button>
+                    <button type="button" class="btn btn-success" onclick="saveBrowser()">Save</button>
+                
+                </div>
+                
+            </div>
+
+            <table class="table table-sm-3">
+                        <tr>
+                            
+                            <td colspan="2" scope="col-sm-3">
+                                <h3>Browser</h3>
+                            <td scope="col-sm-3" colspan="2"><input type="text" class="form-control" id="browser_search" placeholder="Search"></td>
+                        </tr>
+            </table>
+
+            <table class="table table-sm-3" id="browserReport">
+
+            </table>
+
+            <div id="browsersearchResult"></div>
+        
+        </div>
+    
+<!------------------------Browser end--------------------------------------->
+
+<!--------------------------Os start-------------------------->
+    <div class ="col" id="osDiv">
+        <div id="alertmsg5"></div>
+            <div class ="form- group">
+                <label class ="control-label col-sm-3">OS Name</label>
+                <div class="col-sm-8">
+                        <input type="hidden" id="hdnosid">
+                    <input type="text" class="form-control" id="os" placeholder="Operating system Name">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <lable class ="control-label col-sm-3"></lable>
+                <div class="col-sm-8">
+                    <button type="button" class="btn btn-danger" onclick="cancel('#osDiv');">Cancel</button>
+                    <button type="button" class="btn btn-success" onclick="saveOs()">Save</button>
+                
+                </div>
+                
+            </div>
+
+            <table class="table table-sm-3">
+                        <tr>
+                            
+                            <td colspan="2" scope="col-sm-3">
+                                <h3>Operating System</h3>
+                            <td scope="col-sm-3" colspan="2"><input type="text" class="form-control" id="os_search" placeholder="Search"></td>
+                        </tr>
+            </table>
+
+            <table class="table table-sm-3" id="osReport">
+
+            </table>
+
+            <div id="ossearchResult"></div>
+        
+   </div>
+<!------------------------OS end------------------------------------------------>
+
+<!----------------------------Priority Start------------------------------------>
+    <div class ="col" id="priorityDiv">
+        <div id="alertmsg6"></div>
+            <div class ="form- group">
+                <label class ="control-label col-sm-3">Priority</label>
+                <div class="col-sm-8">
+                    <input type="hidden" id="hdnpriorityid">
+                <input type="text" class="form-control" id="priority" placeholder="Priority">
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <lable class ="control-label col-sm-3"></lable>
+            <div class="col-sm-8">
+                <button type="button" class="btn btn-danger" onclick="cancel('#priorityDiv');">Cancel</button>
+                <button type="button" class="btn btn-success" onclick="savePriority()">Save</button>
+            
+            </div>
+            
+        </div>
+
+        <table class="table table-sm-3">
+                    <tr>
+                        
+                        <td colspan="2" scope="col-sm-3">
+                            <h3>Priority</h3>
+                        <td scope="col-sm-3" colspan="2"><input type="text" class="form-control" id="os_search" placeholder="Search"></td>
+                    </tr>
+        </table>
+
+        <table class="table table-sm-3" id="priorityReport">
+
+        </table>
+
+        <div id="prioritysearchResult"></div>
+    
+    </div>
+
+    <!---------------------------------Priority End---------------------------------------------> 
+    
+    <!-------------------------------Bug Tracker Tool----------------------------------------------->
+    <div class="col" id="bugDiv">
+        <div id="alertmsg7"></div>
+
+                <div class="form-group col-xs-4 col-md-4">
+                    <label for="name" class="control-label">Bug Id</label>
+                    <input type="hidden" id="hdnbugid">
+                    <input type="text" value='' class="form-control" id="bugId" placeholder="">
+                </div>
+                <div class="form-group col-xs-8 col-md-8">
+                    <label for="name" class="control-label">Description</label>
+                    <input type="text" value='' class="form-control" id="desp" placeholder="">
+                </div>
+                
+                <div class="form-group col-xs-4 col-md-4">
+                    <label for="name" class="control-label">Created On</label>
+                    <input type="text" value='' class="form-control" id="created" placeholder="">
+                </div>
+
+                <div class="form-group col-xs-4 col-md-4">
+                    <label for="name" class="control-label">Fixed On</label>
+                    <input type="text" value='' class="form-control" id="fixedday" placeholder="">
+                </div>
+                
+                <div class="form-group col-xs-4 col-md-4">
+                        <label for="name" class="control-label">Category</label>
+                        <select class="form-control" id="cat"></select>
+                    </div>
+
+                    <div class="form-group col-xs-4 col-md-4">
+                        <label for="name" class="control-label">Priority</label>
+                        <select class="form-control" id="pre"></select>
+                    </div>
+        
+                    <div class="form-group col-xs-4 col-md-4">
+                            <label for="name" class ="control-label">Browser</label>
+                            <select class="form-control" id="browser2"></select>
+                        </div>
+                
+
+                <div class="form-group col-xs-4 col-md-4">
+                    <label for="name" class ="control-label">Assigned to</label>
+                        <input type="hidden" id="hdnassign">
+                    <select class="form-control" id="assign"></select>
+                </div>
+                <div class="form-group col-xs-4 col-md-4">
+                        <label for="name" class ="control-label">OS</label>
+                        <select class="form-control" id="os2"></select>
+                    </div>
+                <div class="form-group col-xs-4 col-md-4">
+                        <label for="name" class ="control-label">Status</label>
+                            <input type="hidden" id="hdnstatus">
+                        <select class="form-control" id="status"></select>
+                    </div>
+                
+
+                <div class="form-group col-xs-4 col-md-4">
+                        <label for="name" class ="control-label">Fixed By</label>
+                            <input type="hidden" id="hdnfixedby">
+                        <select class="form-control" id="fixedby"></select>
+                    </div>
+                <div class ="form-group col-xs-4 col-md-4">
+                    <label for="name">Step to Reproduce</label>
+                    <textarea class="form-control" rows="5" id="steps"></textarea>
+                </div>
+
+                <div class="form-group col-xs-4 col-md-4">
+                    <lable class ="control-label col-sm-3"></lable>
+
+                        <input type="hidden" id="hdnpageno1" value="1">
+                        <input type="hidden" id="hdntotalpages1">
+                        
+                            <button type="button" class="btn btn-danger" onclick="cancel('#bugDiv');">Cancel</button>
+                            <button type="button" class="btn btn-success" onclick="bug()">Submit</button>
+                        
+                </div>
+
+                <table class="table table-sm-3">
+                            <tr>
+                                <td colspan="2" scope="col-sm-3">
+                                    <h3>Bug</h3>
+                               
+                            </tr>
+                </table>
+                
+                <table class="table table-sm-3" id="bugReport">
+                
+                </table>
+
+                <div id="listingTable"></div>
+                <div class="form-group col-xs-4 col-md-4">
+                        <lable class ="control-label col-sm-3"></lable>
+ 
+                </div>
+                   
+</div>
+
+<!--------------------------------- Bug Tracker End---------------------------------------------> 
+    
+    <!-------------------------------Bug Search Start ----------------------------------------------->
+
+<div class="col" id="bugsearch">
+    <div id="alertmsg8"></div>
+
+            <div class="form-group col-xs-4 col-md-4">
+                <label for="name" class="control-label">Bug Id</label>
+                <input type="hidden" id="hdnbugsrid">
+                <input type="text" value='' class="form-control" id="Id" placeholder="">
+            </div>
+            
+            <div class="form-group col-xs-8 col-md-8">
+                <label for="name" class="control-label">Description</label>
+                <input type="text" value='' class="form-control" id="desc" placeholder="">
+            </div>
+            
+            
+            <div class="form-group col-xs-4 col-md-4">
+                    <label for="name" class="control-label">Category</label>
+                    <select class="form-control" id="catsrc"></select>
+            </div>
+
+            
+            <div class="form-group col-xs-4 col-md-4">
+                <label for="name" class ="control-label">Assigned to</label>  
+                <select class="form-control" id="assignsrc"></select>
+            </div>
+
+            <div class="form-group col-xs-4 col-md-4">
+                    <label for="name" class ="control-label">Status</label>
+                    <select class="form-control" id="statussrc"></select>
+                </div>
+            
+
+            <div class="form-group col-xs-4 col-md-4">
+                    <label for="name" class ="control-label">Fixed By</label>
+                    <select class="form-control" id="fixedbysrc"></select>
+                </div>
+            
+
+            <div class="form-group col-xs-4 col-md-4">
+                <lable class ="control-label col-sm-3"></lable>
+                <input type="hidden" id="hdnpageno" value="1">
+                <input type="hidden" id="hdntotalpages">
+
+                        <button type="button" class="btn btn-danger" onclick="cancel('#bugsearch');">Cancel</button>
+                        <button type="button" class="btn btn-success" onclick="search()">Search</button>
+                    
+            </div>
+
+            <table class="table table-sm-3">
+                        <tr>
+                            <td colspan="2" scope="col-sm-3">
+                                <h3>Bug Result</h3>
+                           
+                        </tr>
+            </table>
+            
+            <table class="table table-sm-3" id="bugsearchreport">
+
+            </table>
+        
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js" integrity="sha384-DztdAPBWPRXSA/3eYEEUWrWCy7G5KFbe8fFjk5JAIxUYHKkDx6Qin1DkWx51bBrb" crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js" integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn" crossorigin="anonymous"></script>
+<script type="text/javascript" src="javascript/index.js"></script> 
+</body>
+</html>

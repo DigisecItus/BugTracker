@@ -1,0 +1,137 @@
+https://medium.com/@ryannel/installing-zookeeper-on-ubuntu-9f1f70f22e25
+
+#zookeeper installation
+------------------------
+#Preparing the system for installing zookeeper
+----------------------------------------------
+sudo apt-get update
+
+sudo apt-get install default-jre
+
+sudo adduser zookeeper
+
+sudo mkdir -p /data/zookeeper
+
+sudo chown -R zookeeper:zookeeper /data
+
+sudo mkdir -p /log/zookeeper
+
+sudo chown -R zookeeper:zookeeper /log
+
+
+
+
+
+cd /opt
+
+#installing zookeeper
+----------------------
+
+sudo wget http://apache.is.co.za/zookeeper/zookeeper-3.4.13/zookeeper-3.4.13.tar.gz
+
+sudo tar -xvf zookeeper-3.4.13.tar.gz
+
+sudo chown zookeeper:zookeeper -R  zookeeper-3.4.13
+
+su zookeeper
+
+#Change the below config server IP's based your Server IP's 
+-----------------------------------------------------------
+
+bash -c "cat > /opt/zookeeper-3.4.13/conf/zoo.cfg <<EOL
+tickTime=2000
+dataDir=/data/zookeeper
+dataLogDir=/log/zookeeper
+clientPort=2181
+initLimit=100
+syncLimit=2
+server.1=172.26.3.100:2891:3881
+server.2=172.26.13.46:2892:3882
+server.3=172.26.2.237:2893:3883
+leaderServes=yes
+autopurge.snapRetainCount=3 
+autopurge.purgeInterval=24
+EOL"
+
+#Run the following command To check whether the above configuration is added properly
+-------------------------------------------------------------------------------------
+
+nano /opt/zookeeper-3.4.13/conf/zoo.cfg
+
+#Change the echo number based on your zookeeper servers 
+-------------------------------------------------------
+
+bash -c "echo '3' >> /data/zookeeper/myid"
+
+nano /opt/zookeeper-3.4.13/bin/zkEnv.sh 
+
+#Add the following line of code into the above file 
+---------------------------------------------------
+ZOO_LOG_DIR=/log/zookeeper
+
+#Run the following command to Test whether your zookeeper is running or not, 
+in a clustered environment with 3 server, atleast 2 should be running for successful 
+connection.
+-----------------------------------------------
+
+bash /opt/zookeeper-3.4.13/bin/zkServer.sh start-foreground
+
+Press Ctrl+C to exit.
+
+exit
+
+#end of Zookeeper installation  
+-------------------------------
+
+
+#Starting Zookeeper as a Service on Server Start-up and restarting automatically when zookeeper goes down
+---------------------------------------------------------------------------------------------------------
+
+sudo nano /etc/systemd/system/zoo-server.service
+
+#copy and paste the following script into the above file and save + exit.
+--------------------------------------------------------------------------
+
+[Unit]
+Description=Zookeeper Daemon
+Wants=syslog.target
+
+[Service]    
+Type=forking
+User=zookeeper
+Group=zookeeper
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=zookeeper-start
+ExecStart=/opt/zookeeper-3.4.13/bin/zkServer.sh start
+TimeoutSec=30
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+
+
+#Command to enable/start/check status of above created service 
+---------------------------------------------------------------
+
+sudo systemctl enable zoo-server
+
+sudo systemctl start zoo-server
+
+sudo systemctl status zoo-server
+
+
+
+#after all 3 server instance done try this command as a client and change Ip config :2181 is port .
+---------------------------------------------------------------
+
+/bin/zkCli.sh -server : 172.26.3.100:2181,172.26.13.46:2181,172.26.2.237:2181
+
+
+
+
+Unseal Key 1: 19AbY49+VcWSP/FZa/WFcIlpQyFz9fRr7V5MqHwz/WAN
+Unseal Key 2: /5FjmAQuBBqKM7pZWiPMuE7miw3ae0Hzp6Np9PK2ZoOj
+Unseal Key 3: x1T24CfQ/KUPv3kVfeVA9bwKeJCR/DzzkCs8s6/KgpfL
+Unseal Key 4: 3rQcbCI0HucIEcIULGzXZhDoZOLeI8uCo+krvwYEnc+b
+Unseal Key 5: u50EeK8qEnDndcrK5+BlHesT10C9yPMVr/QaEOkE0Gun

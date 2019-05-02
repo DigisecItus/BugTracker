@@ -1,0 +1,186 @@
+#Vault Installation steps
+-------------------------
+#Solution : https://www.digitalocean.com/community/tutorials/how-to-securely-manage-secrets-with-hashicorp-vault-on-ubuntu-16-04
+
+#download Vault installation file from the following link 
+---------------------------------------------------------
+
+sudo wget https://releases.hashicorp.com/vault/0.11.5/vault_0.11.5_linux_amd64.zip
+
+sudo apt-get install unzip
+
+sudo unzip vault_0.11.5_linux_amd64.zip
+
+sudo rm vault_0.11.5_linux_amd64.zip
+
+sudo cp vault /usr/local/bin/
+
+sudo setcap cap_ipc_lock=+ep /usr/local/bin/vault
+
+#Phase 2 - Vault user creation / configuration and installation
+---------------------------------------------------------------
+
+sudo useradd -r -d /var/lib/vault -s /bin/nologin vault
+
+sudo install -o vault -g vault -m 750 -d /var/lib/vault
+
+sudo nano /etc/vault.json
+
+#Copy and paste the following configuration to /etc/vault.json file and change the 
+IP address based on your server requirement.
+-----------------------------------------------------------------------------------
+
+{
+        "storage": {
+        "zookeeper" : {
+                "address":"172.26.3.100:2181,172.26.13.46:2181,172.26.2.237:2181",
+                "path":"vault",
+                "advertise_addr":"http://172.26.2.237:8500",
+                "api_addr":"http://172.26.2.237:8200",
+                "cluster_addr":"http://172.26.2.237:8201",
+                "redirect_addr":"http://172.26.2.237:8200"
+                }
+        },
+        "listener":{
+                "tcp":{
+                        "address":"172.26.2.237:8200",
+                        "tls_disable":1
+                }
+        }
+}
+
+#Save the configuration file and close.
+----------------------------------------
+
+sudo chown vault:vault /etc/vault.json
+
+sudo chmod 640 /etc/vault.json
+
+#This ends the vault configuration 
+----------------------------------
+#Create Vault Service which will start Vault on restart and vault crash 
+-----------------------------------------------------------------------
+
+sudo nano /etc/systemd/system/vault.service
+
+#copy the following script into the above file
+----------------------------------------------
+
+[Unit]
+Description=Vault
+Documentation=https://vaultproject.io/docs/
+After=network-online.target
+ConditionFileNotEmpty=/etc/vault.json
+
+[Service]
+PrivateDevices=yes
+PrivateTmp=yes
+ProtectSystem=full
+NoNewPrivileges=yes
+SecureBits=keep-caps-locked
+AmbientCapabilities=CAP_IPC_LOCK
+CapabilityBoundingSet=CAP_IPC_LOCK
+Environment=GOMAXPROCS=24
+ExecStart=/usr/local/bin/vault server -config=/etc/vault.json
+ExecReload=/usr/local/bin/kill --signal HUP $MAINPID
+KillSignal=SIGINT
+TimeoutStopSec=30s
+Restart=on-failure
+StartLimitInterval=60s
+StartLimitBurst=3
+User=vault
+Group=vault
+Type=simple
+
+[Install]
+WantedBy=multi-user.target
+
+#Enable/Start and Check status of above created vault service 
+-------------------------------------------------------------
+
+sudo systemctl enable vault
+
+sudo systemctl start vault
+
+sudo systemctl status vault
+
+#export Vault IP address, this will allow to test the vault status/ init etc
+----------------------------------------------------------------------------
+
+export VAULT_ADDR=http://172.26.2.237:8200
+
+vault status
+
+vault init -key-shares=5 -key-threshold=2
+
+vault operator unseal
+
+vault auth <Root Key>
+
+vault audit enable syslog tag="vault"
+
+vault secrets enable transit
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Unseal Key 1: Q8BRkkXUbgV1H3zTe7Lo9o2BcVn5n3pU4Zjl/L/aaBy7
+Unseal Key 2: r1p82dv0zC36edkI1YTRw0Awer4k8fBQE2VlhrK8r+ft
+Unseal Key 3: 2RfncZTknTkwSgbogp9AVKvl8kDHxrVSapYluzmPQRfG
+Unseal Key 4: jOVmippF8HvcMNZ88GHg62AUULfRX5qugyGXAxn1FyLA
+Unseal Key 5: 2pg336obZr8bNH5lsfbTD7DeuQguwcjjhoD0/xbx9mW1
+
+
+
+Vault Key - Udhay Mumbai Server upgrade
+-------------------------------
+Unseal Key 1: 7ScI0V1N2+ysAvtmDRfvPX+89qOdVmPPu65m0cDxDwaK
+Unseal Key 2: 4YfJDgSd2bQJTdcU1Xj8tFbAVme76I3YHOAAk7VQSPkW
+Unseal Key 3: uYbFnutDNKAyp90mksDDhWZHV1HFdZ0myvHa2lCqOzs0
+Unseal Key 4: S+4TzuVQ6sGSemCD1FLYmBPOP0/zm0eatENymuOtsyRL
+Unseal Key 5: TpYFXZkMZvuvhX0rjrUeuEvvRxxkZoZfBfrVJoKTSq8i
+
+Initial Root Token: 8CfVW6Waeh3cflMbohDqy5R8

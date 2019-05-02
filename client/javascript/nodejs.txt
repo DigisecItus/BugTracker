@@ -1,0 +1,208 @@
+NodeJS Installation
+--------------------
+
+Source : https://websiteforstudents.com/install-the-latest-node-js-and-nmp-packages-on-ubuntu-16-04-18-04-lts/
+
+/* Install curl application for getting started */
+
+sudo apt install curl
+
+/* Run the following command with curl Application, installed above */
+
+curl -sL https://deb.nodesource.com/setup_10.x | sudo bash -
+
+/* install nodejs latest version */
+
+sudo apt-get install -y nodejs
+
+/* Check install is success or not, Check Node and npm version */
+
+node -v && npm -v
+
+/* Only in Primary Server: Clone the Platform API from Github using your username / password */
+-------------------------------------------------------------------------------------------
+
+cd /home/ubuntu && git clone https://github.com/DigisecItus/platform_api
+
+/* Clone the API Discovery API from Github using your username / password */
+
+cd platform_api && npm install 
+
+cd /home/ubuntu && git clone https://github.com/DigisecItus/api_discovery
+
+/* Change directory of where the API Discovery nodeJS source code is */
+
+cd api_discovery && npm install
+
+/* Edit default.json file under api_discovery/config and add the below content 
+change the IP address with respective IP of your zookeeper cluster
+server value should be changed to the first server in the cluster.
+ */
+
+nano api_discovery/config/default.json 
+
+{
+    "global" : {
+        "zookeeper":"172.26.3.100:2181,172.26.13.46:2181,172.26.2.237:2181",
+        "zoopath":"/services/vault",
+        "apinode": "api",
+        "server":"172.26.2.237",
+        "protocol":"http",
+        "port":"8200",
+        "api":"",
+        "configfile":"vault"
+    }
+}
+
+
+/* END of NodeJS and API installation */
+
+/* Create a Service to start Register service */
+
+sudo nano /etc/systemd/system/vault-register.service
+/* Service file content 
+
+[Service]
+ExecStart=/usr/bin/node /home/ubuntu/api_discovery/register.js
+Restart=always
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=vault-register
+User=ubuntu
+Group=ubuntu
+Environment=VAULT_REGISTER_CONFIG=/home/ubuntu/api_discovery/config/default.json
+
+[Install]
+WantedBy=multi-user.target
+
+/* End of Service file content */
+
+/* Enable and start Vault_register service */
+
+sudo systemctl enable vault-register && sudo systemctl start vault-register && sudo systemctl status vault-register
+
+/* The following command is optional, should be used only in case of errors above */
+
+journalctl -u vault-register.service
+
+/* Modify Node Configuration file */
+
+nano /home/ubuntu/api_discovery/config/default.json
+
+/* Note: Modify discovery_api/config/default.json with the following value */
+
+"configfile":"/home/ubuntu/platform_api/config/vault"
+
+/* Only in Primary Server : Create a Vault Watch service, this service will make changes to 
+config file for discovery of active vault server */
+
+sudo nano /etc/systemd/system/vault-watch.service
+
+/* start of service content */
+
+[Service]
+ExecStart=/usr/bin/node /home/ubuntu/api_discovery/watch.js /services/vault/api
+Restart=always
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=vault-watch
+User=ubuntu
+Group=ubuntu
+Environment=VAULT_REGISTER_CONFIG=/home/ubuntu/api_discovery/config/default.json
+
+[Install]
+WantedBy=multi-user.target
+
+/* End of service content */
+
+/* Run the following command to enable and start the Service */
+
+sudo systemctl enable vault-watch && sudo systemctl start vault-watch && sudo systemctl status vault-watch
+
+/* The following command is optional, can run this in case of errors above */
+
+journalctl -u vault-watch.service
+
+/* Only in Primary Server:  Service to start Platform_API Node Server on startup */
+
+sudo nano /etc/systemd/system/platform-api.service
+
+/* Start of Service file content */
+
+[Service]
+ExecStart=/usr/bin/node /home/ubuntu/platform_api/index.js 
+Restart=always
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=vault-watch
+User=ubuntu
+Group=ubuntu
+Environment=PLATFORM_API_CONFIG=/home/ubuntu/platform_api/config/default.json
+
+[Install]
+WantedBy=multi-user.target
+
+/* End of Service file cotent */
+
+sudo systemctl enable platform-api && sudo systemctl start platform-api && sudo systemctl status platform-api
+
+/* Run the following command in case of Failure above */
+
+journalctl -u platform-api.service
+
+/* Config File Change Watcher Service */
+----------------------------------
+
+/* Only in Primary Server : Watch Service for watching any change in configuration file */
+
+sudo nano /etc/systemd/system/platform-config-watch.service
+
+/* Start of Service script */
+
+[Unit]
+Description=srv restarter
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/systemctl restart platform-api.service
+
+[Install]
+WantedBy=multi-user.target
+
+/* End of Service Script */
+
+sudo systemctl enable platform-config-watch.service && sudo systemctl start platform-config-watch.service
+
+/* Only in primary server :  Service to watch changes to specific Path where Config file exists */
+
+sudo nano /etc/systemd/system/platform-config-watch.path
+
+/* Start of Service Script content */
+
+[Path]
+PathModified=/home/ubuntu/platform_api/config
+
+[Install]
+WantedBy=multi-user.target
+
+/* End of Service script content */
+
+sudo systemctl enable platform-config-watch.path && sudo systemctl start platform-config-watch.path
+
+
+/* The following statements are just for illustration purpose and should be used for testing 
+Zookeeper Client (on all clusters) and Node API Call only on Primary server */
+
+
+//Step 1: Install Zkfarmer 
+Step 2: Install NodeJS and Npm 
+Step 3: Run sudo /home/ubuntu/zkfarmer/bin/zkfarmer --host 172.26.11.253:2181,172.26.8.66:2181 export /services/vault /home/ubuntu/nodejs/digisecitus_api/config/vault.json
+
+Encrypt URI
+-----------
+curl --header "Content-Type: application/json" --request POST --data '{"keyname":"ckey","plaintext":"Encryption as a service should work"}' http://172.26.3.100:8080/api/v1/encrypt
+
+Decrypt URI
+-----------
+curl --header "Content-Type: application/json" --request POST --data '{"keyname":"ckey","ciphertext":"vault:v1:n5rrjoi2W5UvnAOoSDhlUi+PobA1GZmb3GSr8rfn00f3lMWUFxADYpD+73/Y7/CvfzxZPEzvxVgnMwmgjIq0"}' http://172.26.3.100:8080/api/v1/decrypt

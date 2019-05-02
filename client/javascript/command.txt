@@ -1,0 +1,15 @@
+/bin/zkclient.sh -server 172.26.3.100:2181,172.26.13.46:2181,172.26.2.237:2181
+
+
+Development server uday 172.26.3.100:2181
+------------------------
+Unseal Key 1: dJXnuoRkS95pwbo/QeeuMg9KAejurN8xHZqASNNIxVKs
+Unseal Key 2: 4QWlahlyrMYvzpWJ3Svov+rEzc1kCdsgWiwErdrO6g0w
+Unseal Key 3: eDP7RIO+YcP9JHN5ZIw6I2E9am4RmlcFq9y4Jvo0DPmJ
+Unseal Key 4: egIImPlsm0sycd2REeT1qYWmAqa2k2v6azRFwo3XorH8
+Unseal Key 5: /KWUQN4LarNzEgy6yhm015fH/zUK/rZf1h9m0NAXc/Qn
+
+Initial Root Token: 5KXaACFXe5SkurnwKiWgnaON
+
+
+vault login 5KXaACFXe5SkurnwKiWgnaON
