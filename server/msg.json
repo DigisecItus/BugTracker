@@ -3,5 +3,9 @@
     "STATUS_CHANGE_MSG" : "`Bug Status changed from ${oldstatus} to ${newstatus}.`",
     "ASSIGN_TO" : "User assign changed",
     "ASSIGN_CHANGE_MSG" : "`Assign changes from ${olduser} to ${newuser}.`",
-    "BUG_UPDATED" : "Bug updated successfully."
+    "BUG_UPDATED" : "Bug updated successfully.",
+    "DELETE_MODULE_SUCCESSFULLY" : "Module deleted successfully",
+    "DELETE_MODULE_UNSUCCESSFULLY" : "This module cannot be delete"
+
+    
 }

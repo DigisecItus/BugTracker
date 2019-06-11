@@ -1,5 +1,5 @@
 "use strict";
-let express = require('express'), app = express(), bodyParser = require('body-parser');
+let express = require('express'), app = express(), bodyParser = require('body-parser'), crypto = require('crypto');
 const PORT = 3100, IP = "localhost";
  const data = require('./msg.json');
  const G_BUG_MASTER_JSON = '{"bugid":"","status":"","category":"","assign":""}';
@@ -21,19 +21,134 @@ app.use(function(req, res, next) {
 });
 
 app.post('/bug/v1/saveuser', (req, res)=>{
-    if (req.body !== undefined || req.body !== '') {
-        //try {
-            saveData(req.body);                           /*Save the user data to mongodb*/
-            res.send({"status":"200","records": 1});
-       /* }
-        catch(err){
-            res.send({"status":"400","error": err});
-        }*/
+    
+    let json = req.body;
+    
+    console.log(json);
+    if (json !== undefined || json !== '') 
+    {
+        var pwd = req.body.password;
+       
+        var mystr = encrypt(pwd);
+        //console.log(mystr);
+        json["password"] = mystr;
+        //console.log(json);
         
-    } else {
+        var MongoClient = require('mongodb').MongoClient({ useNewUrlParser: true});
+        
+        MongoClient.connect("mongodb://" +IP+ ":27017/local", function(err, db){
+                if(err) throw err;
+                db.collection('user', function(err, collection){
+                    if(err) throw err;
+                    collection.insert(json);
+                    db.collection('user').count(function(err, count){
+                        if(err) throw err;
+                        db.close();
+                        res.send({"status":200})
+                    });
+                
+                });
+            });
+    } else 
+    {
         res.send({"status": "404"});
     }
 });
+
+
+
+
+
+app.post('/bug/v1/login', (req,res)=>{
+    //let strJSON = JSON.stringify(req.body);
+    //console.log(strJSON);
+    //let newJSON = JSON.parse(strJSON);
+    console.log(req.body);
+    
+    if (req.body!== undefined || req.body!== '') 
+    {
+        var MongoClient = require('mongodb').MongoClient({ useNewUrlParser: true});
+    
+        MongoClient.connect("mongodb://" +IP+ ":27017/local",function(err,db){
+            //if(err) throw err;
+            console.log(req.body);
+            
+            db.collection("user").findOne({ userid: req.body.userid},function(err,user){
+                console.log('user found');
+                //console.log(user);
+                var pwd = decrypt(user.password);
+                console.log(pwd);
+                if(err) 
+                {
+                    console.log('This is error');
+                    db.close();
+                    res.send({"status":"404"});
+                } 
+                if (user && pwd === req.body.password)
+                {
+                    console.log('User and password is correct');
+                    db.close();
+                    //res.redirect('/bug/v1/savebug');
+                    res.send({"status":"200"});
+                } else {
+                    console.log("Credentials wrong");
+                    db.close();
+                    res.send({"status": "404"});
+                  }        
+            });
+        });
+    }
+    else
+        res.send({"status": "404"});
+
+});
+
+function encrypt(data) {
+    var cipher = crypto.createCipher('aes-256-ecb', 'password');
+    return cipher.update(data, 'utf8', 'hex') + cipher.final('hex');
+}
+
+function decrypt(data) {
+    var cipher = crypto.createDecipher('aes-256-ecb', 'password');
+    return cipher.update(data, 'hex', 'utf8') + cipher.final('utf8');
+}
+
+
+
+/*app.post('/bug/v1/auth', (req,res)=>{
+
+    if(req.body !== undefined || req.body !=='')
+    {
+        
+        
+        
+        
+        var MongoClient = require('mongodb').MongoClient({ useNewUrlParser: true});
+        
+        MongoClient.connect("mongodb://" +IP+ ":27017/local",function(err,db){
+            
+            console.log(req.body);
+                db.collection('groups',function(err,collection){
+                    if(err)throw err;
+                    collection.insert(json);
+                
+                db.collection('groups').count(function(err, count){
+                    if(err) throw err;
+                    db.close();
+                    res.send({"send":"200"})
+                });
+
+            
+            
+            });
+            
+        });
+
+    }
+
+});*/
+
+
 
 
 app.post('/bug/v1/savecategory', (req, res) =>{           /*Save the category to mongodb*/
@@ -133,10 +248,10 @@ app.get('/bug/v1/bugid', function(req,res){
   
 });
 
-app.post('/bug/v1/getrowcount/:collectionname',function(req,res){
+app.post('/bug/v1/getrowcount/:collectionname',function(req,res){   /*Created a generic collectionName for row Count*/
     
     let json = req.body;
-    console.log("%%%%%%%%%");
+    //console.log("%%%%%%%%%");
     console.log(req.body);
     if(json!== undefined || json!=='')
     {
@@ -146,12 +261,12 @@ app.post('/bug/v1/getrowcount/:collectionname',function(req,res){
             console.log("--------------");
             console.log(mkey);
         } else {
-            console.log("&&&&&&&&&&&&&");
-            console.log(json)
+            //console.log("&&&&&&&&&&&&&");
+            //console.log(json)
         }
-        console.log("********json********");
-        console.log(json);
-        console.log("*****mkey*****");
+        //console.log("********json********");
+        //console.log(json);
+        //console.log("*****mkey*****");
         console.log(mkey);
         let ljson = generateQuery2(json,mkey)
         console.log(ljson);
@@ -161,7 +276,7 @@ app.post('/bug/v1/getrowcount/:collectionname',function(req,res){
         
         MongoClient.connect("mongodb://" +IP+ ":27017/local", function(err, db){
             if(err) throw err;
-            console.log("****ljson****");
+            //console.log("****ljson****");
             console.log(ljson);
             db.collection(lcollectionname).find(ljson).count( function(err, count){
                 if(err) throw err;
@@ -469,12 +584,12 @@ function generateQuery2(Jsonobj,pMasterJson)
 function isUserunique(puserid,pid,presp)
 {
  var MongoClient = require('mongodb').MongoClient({ useNewUrlParser: true});
- let lCondition = {"userid":puserid};
+ let lCondition = {"userid":{'$regex': '^'+puserid+'$',$options:'i'}};
  if ( pid !== ''){ //Edit mode
-    lCondition = {_id :{$ne : ObjectId(pid)}, "userid" : puserid };
+    //lCondition = {_id :{$ne : ObjectId(pid)}, "userid" : puserid };
+    lCondition = {_id: {$ne : ObjectId(pid)},"userid": {'$regex': '^'+puserid+'$',$options:'i'}}
  } 
- ////console.log(puserid);
- ////console.log(lCondition);
+ 
  MongoClient.connect("mongodb://" +IP+ ":27017/local", function(err,db){
      if(err) throw err;
 
@@ -493,9 +608,14 @@ function isUserunique(puserid,pid,presp)
 function isCategoryunique(pcategory,pid,presp)
 {
     var MongoClient = require('mongodb').MongoClient({useNewUrlParser:true});
-    let lCondition = {"categoryname":pcategory};
-    if(pid !== ''){
-        lCondition = {_id :{$ne : ObjectId(pid)}, "categoryname" : pcategory };
+    let lCondition = {"categoryname": {'$regex': '^'+pcategory+'$',$options:'i'}};
+    console.log(pid);
+    console.log("before condition")  
+    if(pid !== ''){   /*Edit mode */
+
+        console.log(pid);
+        console.log("after condition")
+        lCondition = {_id :{$ne : ObjectId(pid)}, "categoryname": {'$regex': '^'+pcategory+'$',$options:'i'} };
     }
     ////console.log(lCondition);
     MongoClient.connect("mongodb://" +IP+ ":27017/local", function(err, db){
@@ -514,9 +634,9 @@ function isCategoryunique(pcategory,pid,presp)
 function isStatusunique(pstatus,pid,presp)
 {
     var MongoClient = require('mongodb').MongoClient({useNewUrlParser:true});
-    let lCondition = {"statusname":pstatus};
-    if(pid !== ''){
-        lCondition = {_id :{$ne : ObjectId(pid)}, "statusname" : pstatus};
+    let lCondition = {"statusname": {'$regex': '^'+pstatus+'$',$options:'i'}}; 
+    if(pid !== ''){/*edit  mode*/
+        lCondition = {_id :{$ne : ObjectId(pid)},"statusname": {'$regex': '^'+pstatus+'$',$options:'i'}};
     }
     ////console.log(lCondition);
     MongoClient.connect("mongodb://" +IP+ ":27017/local", function(err, db){
@@ -534,9 +654,9 @@ function isStatusunique(pstatus,pid,presp)
 function isBrowserunique(pbrowser,pid,presp)  /* Function to check browser unique */
 {
     var MongoClient = require('mongodb').MongoClient({useNewUrlParser : true});
-    let lCondition = {"browser": pbrowser};
-    if (pid !== ''){
-        lCondition = {_id : {$ne : ObjectId(pid)},"browser": pbrowser};
+    let lCondition = {"browser": {'$regex': '^'+pbrowser+'$',$options:'i'}};
+    if (pid !== ''){/*edit mode*/
+        lCondition = {_id : {$ne : ObjectId(pid)},"browser": {'$regex': '^'+pbrowser+'$',$options:'i'}};
     }
     MongoClient.connect("mongodb://" +IP+ ":27017/local", function(err,db){
         if(err) throw err;
@@ -552,9 +672,9 @@ function isBrowserunique(pbrowser,pid,presp)  /* Function to check browser uniqu
 function isOsunique(pos,pid,presp)  /* Function to check OS unique */
 {
     var MongoClient = require('mongodb').MongoClient({useNewUrlParser : true});
-    let lCondition = {"os": pos};
-    if (pid !== ''){
-        lCondition = {_id : {$ne : ObjectId(pid)},"os": pos};
+    let lCondition = {"os": {'$regex': '^'+pos+'$',$options:'i'}};
+    if (pid !== ''){/*Edit mode*/
+        lCondition = {_id : {$ne : ObjectId(pid)},"os": {'$regex': '^'+pos+'$',$options:'i'}};
     }
     MongoClient.connect("mongodb://" +IP+ ":27017/local", function(err,db){
         if(err) throw err;
@@ -570,9 +690,9 @@ function isOsunique(pos,pid,presp)  /* Function to check OS unique */
 function isPriorityunique(lpriority,pid,presp)  /* Function to check priority unique */
 {
     var MongoClient = require('mongodb').MongoClient({useNewUrlParser : true});
-    let lCondition = {"priority": lpriority};
-    if (pid !== ''){
-        lCondition = {_id : {$ne : ObjectId(pid)},"priority": lpriority};
+    let lCondition = {"priority": {'$regex': '^'+lpriority+'$',$options:'i'}}; 
+    if (pid !== ''){/*Edit mode */
+        lCondition = {_id : {$ne : ObjectId(pid)},"priority": {'$regex': '^'+lpriority+'$',$options:'i'}};
     }
     MongoClient.connect("mongodb://" +IP+ ":27017/local", function(err,db){
         if(err) throw err;
@@ -591,9 +711,9 @@ function isbugUnique(pdesc, pid, presp)
     ////console.log(pdesc);
     ////console.log(pid);
     var MongoClient = require('mongodb').MongoClient({useNewUrlParser : true});
-    let lCondition = {"desc": pdesc};
-    if (pid !== ''){
-        lCondition = {_id : {$ne : ObjectId(pid)},"desc": pdesc};
+    let lCondition = {"desc": {'$regex': '^'+pdesc+'$',$options:'i'}}; 
+    if (pid !== ''){ /*edit mode */
+        lCondition = {_id : {$ne : ObjectId(pid)}, "desc": {'$regex': '^'+pdesc+'$',$options:'i'}};
     }
     
     MongoClient.connect("mongodb://" +IP+ ":27017/local", function(err,db){
@@ -616,24 +736,6 @@ function isbugUnique(pdesc, pid, presp)
 
 /* Function to  Save user records */
 
-function saveData(pdata)
-{
-    var MongoClient = require('mongodb').MongoClient({ useNewUrlParser: true});
-
-MongoClient.connect("mongodb://" +IP+ ":27017/local", function(err, db){
-        if(err) throw err;
-        db.collection('user', function(err, collection){
-            if(err) throw err;
-            collection.insert(pdata);
-            db.collection('user').count(function(err, count){
-                if(err) throw err;
-                db.close();
-                return count;
-            });
-        
-        });
-    });
-}
 
 function saveCategory(pdata)      /* Function to Save cateogry records */
 {
@@ -1118,10 +1220,12 @@ function getBugDetails(pbugid, resp)
 
 function updateUser(pupdateID,resp,pJSON)
 {
+    let ljson = {"firstname":pJSON.firstname,"lastname":pJSON.lastname,"userid":pJSON.userid};
+    console.log(ljson);
     var MongoClient = require('mongodb').MongoClient({useNewUrlParser : true});
     MongoClient.connect("mongodb://" +IP+ ":27017/local" , (err, db)=>{
 
-        db.collection("user").update({"_id": ObjectId(pupdateID)}, pJSON, function(err, result){
+        db.collection("user").update({"_id": ObjectId(pupdateID)},{$set:ljson}, function(err, result){
             if(err) throw err;
             db.close(); 
             resp.send(result);
@@ -1294,5 +1398,313 @@ function updateBug(pbugid,pJSON,presp)
     });
 }*/
 
+app.post('/bug/v1/moduleexist',function(req,res){      /*API to count the number of user count*/
+    ////console.log(req.body);
+    moduleexist(req.body.module_name, req.body.id, res);
+});
 
+function moduleexist(pmodule_name,pid,presp)
+{
+    var MongoClient = require('mongodb').MongoClient({ useNewUrlParser: true});
+
+    let lCondition = {"module_name": {'$regex': '^'+pmodule_name+'$',$options:'i' }};
+    if(pid !== ''){/*edit mode */
+        console.log("pid has value");
+        //lCondition = {_id :{$ne : ObjectId(pid)}, "module_name" : pmodule_name };
+        lCondition = {_id: {$ne : ObjectId(pid)},"module_name": {'$regex': '^'+pmodule_name+'$',$options:'i'}};
+    }
+    MongoClient.connect("mongodb://" +IP+ ":27017/local", function(err,db){
+        if(err) throw err;
+
+        db.collection('module').find(lCondition).count( function(err, count){
+            if(err) throw err;
+            db.close();
+            console.log("count of module"+count);
+            presp.send( {"count":count});
+        });
+    });
+
+}
+
+app.post('/bug/v1/addmodule',(req,res)=>{
+
+    let json = req.body;
+    
+    if (json!== undefined && json!== '') 
+    {
+        console.log(json);
+        var MongoClient = require('mongodb').MongoClient({ useNewUrlParser: true});
+        
+        MongoClient.connect("mongodb://" +IP+ ":27017/local", function(err, db){
+            if(err) throw err;
+            db.collection('module', function(err, collection){
+                if(err) throw err;
+                collection.insert(json);
+                    db.collection('module').count(function(err, count){
+                        if(err) throw err;
+                        db.close();
+                        res.send({"status":200})
+                    });
+                });
+        });
+    }
+    else 
+    {
+        res.send({"status":400});
+    }
+});
+
+app.post('/bug/v1/updatemodule/:id', function(req, res){
+    updatemodule(req.params.id,req.body,res);
+});
+
+
+
+function updatemodule(pmoduleid,pjson,presp)
+{
+    var MongoClient = require('mongodb').MongoClient({useNewUrlParser : true});
+    MongoClient.connect("mongodb://" +IP+ ":27017/local" , (err, db)=>{
+
+        db.collection("module").update({"_id": ObjectId(pmoduleid)}, pjson, function(err,result){
+            if(err) throw err;
+            db.close(); 
+            presp.send(result);
+        
+        });
+    });
+}
+
+app.post('/bug/v1/deletemodule/:id', function(req,res){
+
+
+    let modules = req.body;
+
+    let moduleid = req.params.id; 
+    var MongoClient = require('mongodb').MongoClient({useNewUrlParser : true});
+    MongoClient.connect("mongodb://" +IP+ ":27017/local",(err, db)=>{
+
+        db.collection('groups').find(modules).count(function(err,count){
+            if(err)throw err;
+            console.log("count"+count);
+            console.log(modules);
+            if(count == 0)
+            {
+                db.collection("module").deleteOne({"_id": ObjectId(moduleid)} ,function(err, result){
+                    if (err) throw err;
+                    db.close(); 
+                    res.send({"msgcode" : "DELETE_MODULE_SUCCESSFULLY"});
+                });
+            }
+            else
+            {
+                db.close();
+                res.send({"msgcode" : "DELETE_MODULE_UNSUCCESSFULLY"});
+            }
+
+        })
+    })
+});
+
+app.get('/bug/v1/getmoduleid/:id',(req,res)=>{
+    if(req.body !== undefined && req.body !=='')
+    {
+        getmoduleid(req.params.id,res);
+    }
+    else{
+        res.send({"status":400})
+    }
+});
+
+function getmoduleid(pmoduleid,presp)
+{
+    var MongoClient = require('mongodb').MongoClient({useNewUrlParser : true});
+
+    MongoClient.connect("mongodb://" +IP+ ":27017/local" , (err, db)=>{
+        if(err) throw err;
+        db.collection('module').find({"_id": ObjectId(pmoduleid)}).toArray(function(err, result){
+            if(err) throw err;
+            db.close(); 
+            presp.send(result);
+        });
+    });
+}
+
+app.get('/bug/v1/getmodule',(req,res)=>{
+    if(req.body !== undefined && req.body !=='')
+    {
+        getmodule(res);
+    }
+    else{
+        res.send({"status":400})
+    }
+})
+
+
+function getmodule(presp)
+{
+    var MongoClient = require('mongodb').MongoClient({useNewUrlParser : true});
+
+    MongoClient.connect("mongodb://" +IP+ ":27017/local",(err,db)=>{
+        if(err) throw err;
+         db.collection('module').find({}).toArray(function(err,result){
+            if(err) throw err;
+            db.close(); 
+             presp.send(result);
+        });
+    });
+
+}
+    
+
+
+app.post('/bug/v1/addgroups',(req,res)=>{
+    
+    let json = req.body;
+    console.log(json);
+
+    if(json !== undefined || json!== '')
+    {
+
+        var MongoClient = require('mongodb').MongoClient({useNewUrlParser : true});
+
+        MongoClient.connect("mongodb://" +IP+ ":27017/local",(err,db)=>{
+            if(err) throw err;
+            
+            db.collection('groups',function(err,collection){
+                if(err) throw err;
+                
+                collection.insert(json);
+                
+                db.collection('groups').count(function(err, count){
+                    if(err) throw err;
+                    db.close();
+                    res.send({"status":200})
+                });
+
+            });
+
+        });
+    }
+    else
+    {
+        res.send({"status":400})
+    }
+
+});
+app.post('/bug/v1/groupsexist',function(req,res){      /*API to count the number of user count*/
+    ////console.log(req.body);
+    groupexist(req.body.group_name,req.body.checkModule, req.body.id, res);
+});
+
+
+
+function groupexist(pgroup_name,pcheckModule,pid,presp)
+{
+    var MongoClient = require('mongodb').MongoClient({ useNewUrlParser: true});
+
+    let lCondition = {"group_name": {'$regex': '^'+pgroup_name+'$',$options:'i'},"checkModule":pcheckModule};
+    if(pid !== ''){/*Edit mode*/
+        lCondition = {_id :{$ne : ObjectId(pid)}, "group_name": {'$regex': '^'+pgroup_name+'$',$options:'i'},"checkModule":pcheckModule};
+    }
+    
+    MongoClient.connect("mongodb://" +IP+ ":27017/local", function(err,db){
+        if(err) throw err;
+
+        db.collection('groups').find(lCondition).count( function(err, count){
+            if(err) throw err;
+            db.close();
+            presp.send( {"count":count});
+        });
+    });
+
+}
+
+app.post('/bug/v1/updategroups/:id', function(req, res){
+    updategroup(req.params.id,req.body,res);
+});
+
+
+
+function updategroup(pid,pjson,presp)
+{
+    var MongoClient = require('mongodb').MongoClient({useNewUrlParser : true});
+    
+    MongoClient.connect("mongodb://" +IP+ ":27017/local" , (err, db)=>{
+        
+        db.collection('groups').update({"_id": ObjectId(pid)}, pjson, function(err, result){
+            if(err) throw err;
+            db.close(); 
+            presp.send(result);
+        
+        });
+    });
+}
+
+app.get('/bug/v1/deletegroups/:id',(req,res)=>{
+
+    let groupsid = req.params.id
+    var MongoClient = require('mongodb').MongoClient({useNewUrlParser : true});
+    //console.log(groupsid);
+    
+    MongoClient.connect("mongodb://" +IP+ ":27017/local",(err, db)=>{
+            
+        db.collection('groups').deleteOne({"_id": ObjectId(groupsid)} ,function(err, result){
+            if (err) throw err;
+                db.close(); 
+                res.send({"send":200});
+            });
+        });
+    
+});
+
+app.get('/bug/v1/getgroups',(req,res)=>{
+    if(req.body !== undefined && req.body !=='')
+    {
+        getgroup(res);
+    }
+    else{
+        res.send({"status":400})
+    }
+});
+
+
+function getgroup(presp)
+{
+    var MongoClient = require('mongodb').MongoClient({useNewUrlParser : true});
+
+    MongoClient.connect("mongodb://" +IP+ ":27017/local" , (err, db)=>{
+        if(err) throw err;
+        db.collection('groups').find({}).toArray(function(err, result){
+            if(err) throw err;
+            db.close(); 
+            presp.send(result);
+        });
+    });
+}
+
+
+app.get('/bug/v1/getgroupid/:id',(req,res)=>{
+    if(req.body !== undefined && req.body !=='')
+    {
+        getgroupid(req.params.id,res);
+    }
+    else{
+        res.send({"status":400})
+    }
+});
+
+function getgroupid(pgroupid,presp)
+{
+    var MongoClient = require('mongodb').MongoClient({useNewUrlParser : true});
+    //console.log(pgroupid);
+
+    MongoClient.connect("mongodb://" +IP+ ":27017/local" , (err, db)=>{
+        if(err) throw err;
+        db.collection('groups').find({"_id": ObjectId(pgroupid)}).toArray(function(err, result){
+            if(err) throw err;
+            db.close(); 
+            presp.send(result);
+        });
+    });
+}
 

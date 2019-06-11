@@ -1,4 +1,7 @@
 "use strict";
+
+
+
 const IP = "localhost";
 const PORT = 3100;
 let gPagesize = 10;
@@ -14,6 +17,9 @@ $(document).ready(function () {
     $("#priorityDiv").hide();
     $("#bugDiv").hide();
     $("#bugsearch").hide();
+    $("#moduleId").hide();
+    $("#grpId").hide();
+    
 
 });
 
@@ -21,22 +27,17 @@ $(document).ready(function () {
 
 
 
-
-/*$("#btnadduser").on('click', function(){
-    $("#categoryDiv").hide();
-    $("#statusDiv").hide();
-    $("#browserDiv").hide();
-    $("#osDiv").hide();
-    $("#priorityDiv").hide();
-    $("#userDiv").hide();
-});*/
-
-
 function showUserRegion() {
     hideAllRegion();
     $("#userDiv").show();
+    getgroups();
     displaySaveuser();
     $("#menu").hide();
+    setGroupUnchecked();
+    clear(['hdnuserid', 'first_name', 'last_name', 'user_id','pwd','pwdre']);
+    $("#pwd").prop("disabled", false);
+    $("#pwdre").prop("disabled",false);
+    
 }
 
 function showCategoryRegion() {
@@ -80,11 +81,6 @@ function cancel(pRegion) {
 }
 
 
-
-
-
-
-
 function showBugRegion() {
     hideAllRegion();
     $("#menu").hide();
@@ -116,7 +112,24 @@ function showBugSearchRegion() {
     getStatus();
     getuserid();
 
+}
 
+function showModuleRegion(){
+    hideAllRegion();
+    $("#menu").hide();
+    $("#moduleId").show();
+    displaymodule();
+    setModuleUnchecked();
+}
+
+function showGroupRegion(){
+    hideAllRegion();
+    $("#menu").hide();
+    $("#grpId").show();
+    //checkbox();
+    getmodule();
+    displaygroup();
+    clear(['hdngroupid', 'group_name']);
 }
 
 
@@ -143,6 +156,9 @@ function hideAllRegion() {
     $("#priorityDiv").hide();
     $("#bugDiv").hide();
     $("#bugsearch").hide();
+    $("#moduleId").hide();
+    $("#grpId").hide();
+
 
 }
 
@@ -185,60 +201,98 @@ function clear(arrFlds) {
         $("#" + arrFlds[i]).val('');
 }
 
-/*----------------------------- Generic Functions ------------------------------*/
-
-
-
-
+/*---------------------------------------------------------------------------------------*/
 
 function saveUser() {
     var hdnuserid = $("#hdnuserid").val();
     var first_name = $("#first_name").val();
     var last_name = $("#last_name").val();
     var user_id = $("#user_id").val();
-    var JsonData = {
-        "firstname": first_name,
-        "lastname": last_name,
-        "userid": user_id
-    };
-    if (isNotempty(first_name)) {
-        if (isNotempty(user_id)) {
-            isUseridUnique(user_id, hdnuserid, JsonData);
+    var password = $("#pwd").val();
+    var re_password = $("#pwdre").val();
+    var hdnpassword= $("#hdnpassword").val();
+    //var hdnrepws = $("#hdnrepassword").val();
+    
+    if (isNotempty(first_name)) 
+    {
+        if (isNotempty(user_id))
+        {
+            //if(CheckPassword(password))
+            //{
+                //if(CheckPassword(re_password))
+                //{
+                    if(password == re_password)   
+                    {
+                        var JsonData = {
+                            "firstname": first_name,
+                            "lastname": last_name,
+                            "userid": user_id,
+                            "password":password
+                        };
+                
+                        JsonData["groupname"] = getGroupJson();
+                        isUseridUnique(user_id, hdnuserid, JsonData);
+                    }else
+                        alertmsg(' Password does not match', 'WARNING', 'alertmsg');
+                        displaySaveuser();
+                        clear(['hdnuserid', 'first_name', 'last_name', 'user_id','pwd','pwdre']);
+                //}//else
+                    //alertmsg('Please  enter the password 6 to 20 characters which contain at least one numeric digit, one uppercase and one lowercase letter', 'WARNING', 'alertmsg');
+                    //displaySaveuser();
+                    //clear(['hdnuserid', 'first_name', 'last_name', 'user_id','pwd','pwdre']);
+            
+            //}else
+                //alertmsg('Please enter the password 6 to 20 characters which contain at least one numeric digit, one uppercase and one lowercase letter', 'WARNING', 'alertmsg');
+
+
         } else
-            alertmsg('Please fill the UserId', 'DANGER', 'alertmsg');
+            alertmsg('Please fill the UserId', 'WARNING', 'alertmsg');
+            displaySaveuser();
+            clear(['hdnuserid', 'first_name', 'last_name', 'user_id','pwd','pwdre']);
     } else
-        alertmsg('Please fill the First Name', 'DANGER', 'alertmsg');
+        alertmsg('Please fill the First Name', 'WARNING', 'alertmsg');
+        displaySaveuser();
+        clear(['hdnuserid', 'first_name', 'last_name', 'user_id','pwd','pwdre']);
 }
 
 function isUseridUnique(puser_id, pid = '', pJsonData) {
-    $.post("http://" + IP + ":" + PORT + "/bug/v1/usercount", {
+    $.post("http://" + IP + ":" + PORT + "/bug/v1/usercount", {   /*Check duplication */
         "userid": puser_id,
         "id": pid
     }, function (data, status) {
 
-        if (data.count == 0) {
-            if (pid == '') { // New Record Mode
-                $.post("http://" + IP + ":" + PORT + "/bug/v1/saveuser", pJsonData,
+        if (data.count == 0) 
+        {
+            if (pid == '')
+            {
+                $.post("http://" + IP + ":" + PORT + "/bug/v1/saveuser", pJsonData ,
                     function (data, status) {
                         alertmsg('Saved Successfully', 'SUCCESS', 'alertmsg');
-                        clear(['hdnuserid', 'first_name', 'last_name', 'user_id']);
+                        clear(['hdnuserid', 'first_name', 'last_name', 'user_id','pwd','pwdre']);
                         displaySaveuser();
+                        setGroupUnchecked();
                     }
                 );
-            } else { //Edit Mode 
-                $.post("http://" + IP + ":" + PORT + "/bug/v1/edituser/" + pid, pJsonData,
-                    function (data, status) {
-                        alertmsg('Update Data Saved Successfully', 'SUCCESS', 'alertmsg');
-                        clear(['hdnuserid', 'first_name', 'last_name', 'user_id']);
-                        displaySaveuser();
-                    }
-                );
+                
             }
+            else { //Edit Mode 
+                
+                $.post("http://" + IP + ":" + PORT + "/bug/v1/edituser/" + pid, pJsonData,
+                       
+                    function (data, status) {
+                    
+                        alertmsg('Update Data Saved Successfully', 'SUCCESS', 'alertmsg');
+                        clear(['hdnuserid', 'first_name', 'last_name', 'user_id','pwd','pwdre']);
+                        displaySaveuser();
+                        setGroupUnchecked();
+                       
+                    });
+                }
+            
         } else
             alertmsg('This ID already exists', 'DANGER', 'alertmsg');
-    })
+    });
 }
-
 
 
 function displaySaveuser() {
@@ -254,8 +308,8 @@ function mapUserData(pData) {
     html += '<th scope="col-sm-3">User Id</th><th></th><th></th></tr></thead>';
     if (pData.length != 0) {
         for (let i = 0; i < pData.length; i++) {
-            html += '<tr><td>' + pData[i].firstname + '</td><td>' + pData[i].lastname + '</td>';
-            html += '<td>' + pData[i].userid + '</td><td><a href="javascript:editUser(\'' + pData[i]._id + '\');">Edit</a></td>';
+            html += '<tr><td style="font-size:15px;">' + pData[i].firstname + '</td><td style="font-size:15px;">' + pData[i].lastname + '</td>';
+            html += '<td style="font-size:15px;">' + pData[i].userid +'</td><td><a href="javascript:editUser(\'' + pData[i]._id + '\');">Edit</a></td>';
             html += '<td><a href="javascript:deleteUser(\'' + pData[i]._id + '\');">Delete</td></tr>';
         }
     }
@@ -265,18 +319,24 @@ function mapUserData(pData) {
 
 function editUser(puser_id) {
     $.get("http://" + IP + ":" + PORT + "/bug/v1/getid/" + puser_id, function (data, status) {
-        console.log(data)
+        //console.log(data)
         edituserData(data);
 
     });
 }
 
 function edituserData(pdata) {
-    for (var i = 0; i < pdata.length; i++) {
+    for (var i = 0; i < pdata.length; i++) 
+    {
         $("#first_name").val(pdata[i].firstname);
         $("#last_name").val(pdata[i].lastname);
         $("#user_id").val(pdata[i].userid);
         $("#hdnuserid").val(pdata[i]._id);
+        $("#hdnpassword").val(pdata[i].password)
+        $("#pwd").prop("disabled", true);
+        $("#pwdre").prop("disabled",true);
+
+        setGroupChecked(pdata[i]["groupname[]"]);
 
     }
 }
@@ -289,34 +349,103 @@ function deleteUser(Id) /* delete user */
     if (r == true) {
         $.get("http://" + IP + ":" + PORT + "/bug/v1/deleteuser/" + Id, function (data, status) {
             alertmsg('Deleted successfully !', 'DANGER', 'alertmsg');
+            displaySaveuser();
+         
+
         });
     } else
         alertmsg('You Cancelled', 'DANGER', 'alertmsg');
+        displaySaveuser();
 }
 
-function searchUser() {
-    var keyword = $('#user_search').val();
-    $.get("http://" + IP + ":" + PORT + "bug/v1/searchuser/" + keyword, function (data, status) {
-        searchuserdata(data);
+
+function getgroups()
+{
+$.get("http://" + IP + ":" + PORT + "/bug/v1/getgroups" , function(data,status){
+    //console.log(data);
+    displaygroups(data);
+    
     });
 }
 
-function searchuserdata(pdata) {
-    //console.log('ppppppppp', pdata);
-    $("#searchResult").html('');
+function displaygroups(pdata)
+{
     let html = '<thead><tr>';
-    html += '<th scope="col-sm-3">First Name</th>';
-    html += '<th scope="col-sm-3">Last Name</th>';
-    html += '<th scope="col-sm-3">User Id</th><th></th><th></th></tr></thead>';
-    for (let i = 0; i < pdata.length; i++) {
-        html += '<tr><td>' + pdata[i].firstname + '</td><td>' + pdata[i].lastname + '</td>';
-        html += '<td>' + pdata[i].userid + '</td>';
-
-    }
-    $("#searchResult").html(html);
-
-
+    html += '<th><input type="checkbox" name="selectall" id="check"  onClick="checkGroup(this)" >Select All</th><th>Group Name</th><th></th></tr></thead>';
+    for (let i = 0; i < pdata.length; i++)                      
+    { 
+        html +='<tr><td style="font-size:15px;"><input type="checkbox" name="group" value="' + pdata[i].group_name + '"></td><td>'+ pdata[i].group_name + '</td></tr>';
+    }    
+    $("#groupcheck").html(html);
+    
 }
+
+function checkGroup(source) {
+    let checkedVal = source.checked ;
+    var checkboxes = document.getElementsByName('group');
+    for(var i=0; i < checkboxes.length ; i++)
+        checkboxes[i].checked = checkedVal;
+}
+
+
+
+
+
+
+function getGroupJson()  /*This Function get the checked group*/
+{
+    var strJson = [];
+    
+    $.each($("input[name='group']:checked"), function(){
+        strJson.push($(this).val()) ;
+    });
+    
+    return strJson;          
+    
+}
+
+function setGroupChecked(pgroupname)   /*This function create a automatich checked on checbox during edit*/
+{
+    $.each($("input[name='group']"), function(index, value){
+        $(value).prop("checked",false);
+        if(Array.isArray(pgroupname)){
+        for (var i=0; i < pgroupname.length; i++) {
+            if ($(value).val() == pgroupname[i]) {
+                $(value).prop("checked",true);
+                break;
+            }
+          }
+        } else{
+            if($(value).val() == pgroupname){
+            $(value).prop("checked",true);
+           }
+        }
+    });
+}
+
+function setGroupUnchecked()   /*Function to uncheck the checkbox*/
+{
+    $.each($("input[name='group']:checked"), function(index, value){
+        $(value).prop("checked",false);
+    });
+}
+ 
+function CheckPassword(ptxt) /*Password validation */
+{
+    var passw=/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,20}$/;
+    if(ptxt.match(passw)) 
+    {
+        console.log("true");
+        return true;
+    }
+    else
+    {
+        console.log("false");
+        return false;
+    }
+}
+
+
 
 /*-------------- Category Module Start ------------*/
 
@@ -330,7 +459,7 @@ function saveCategory() /* Save Category */ {
     if (isNotempty(category_name)) {
         iscategoryUnique(category_name, JsonData, hdncategoryid)
     } else
-        alertmsg('Please fill the Category Name', 'DANGER', 'alertmsg2');
+        alertmsg('Please fill the Category Name', 'WARNING', 'alertmsg2');
 }
 
 function iscategoryUnique(pcategoryname, pJsonData, pid = '') /* check unique Category */ {
@@ -372,10 +501,10 @@ function displayCategory() /* display Category */ {
 
 function categorydata(pdata) {
     let html = '<thead><tr>';
-    html += '<th scope="col-sm-3">Category Name</th><th></th><th></th></tr></thead>';
+    html += '<th scope="col-sm-3"style="font-size:15px;">Category Name</th><th></th><th></th></tr></thead>';
     if (pdata.length !== 0)
         for (let i = 0; i < pdata.length; i++) {
-            html += '<tr><td>' + pdata[i].categoryname + '</td><td><a href="javascript:editCategory(\'' + pdata[i]._id + '\');">Edit</a></td>';
+            html += '<tr><td style="font-size:15px;">' + pdata[i].categoryname + '</td><td><a href="javascript:editCategory(\'' + pdata[i]._id + '\');">Edit</a></td>';
             html += '<td><a href="javascript:deleteCategory(\'' + pdata[i]._id + '\');">Delete</td></tr>';
         }
     $("#categoryReport").html(html);
@@ -422,7 +551,7 @@ function saveStatus() /* Save Status */ {
         isStatusunique(JsonData, status_name, hdnstatusid)
 
     } else
-        alertmsg('Please fill the Status Name', 'DANGER', 'alertmsg3');
+        alertmsg('Please fill the Status Name', 'WARNING', 'alertmsg3');
 
 }
 
@@ -432,7 +561,7 @@ function isStatusunique(pJsonData, pstatusname, pid = '') /* Check Status unique
         "id": pid
     }, function (data, status) {
 
-        if (data.count == 0) {
+        if (data.count == 0) {   /*Check the status duplication */
             if (pid == '') {
                 $.post("http://" + IP + ":" + PORT + "/bug/v1/savestatus", pJsonData,
                     function (data, status) {
@@ -467,7 +596,7 @@ function statusData(pdata) {
     html += '<th scope="col-sm-3">Status Name</th><th></th><th></th></tr></thead>';
     if (pdata.length !== 0)
         for (let i = 0; i < pdata.length; i++) {
-            html += '<tr><td>' + pdata[i].statusname + '</td><td><a href="javascript:editStatus(\'' + pdata[i]._id + '\');">Edit</a></td>';
+            html += '<tr><td style="font-size:15px;">' + pdata[i].statusname + '</td><td><a href="javascript:editStatus(\'' + pdata[i]._id + '\');">Edit</a></td>';
             html += '<td><a href="javascript:deleteStatus(\'' + pdata[i]._id + '\');">Delete</td></tr>';
         }
     $("#statusReport").html(html);
@@ -515,7 +644,7 @@ function saveBrowser() {
         isBrowserunique(browser, hdnbrowserid, JsonData)
 
     } else
-        alertmsg('Please fill the Browser Name', 'DANGER', 'alertmsg4');
+        alertmsg('Please fill the Browser Name', 'WARNING', 'alertmsg4');
 }
 
 function isBrowserunique(pbrowser, pid = '', pJsonData) {
@@ -524,7 +653,7 @@ function isBrowserunique(pbrowser, pid = '', pJsonData) {
         "id": pid
     }, function (data, status) {
 
-        if (data.count == 0) {
+        if (data.count == 0) {   /*check duplication for browser*/
             if (pid == '') {
                 $.post("http://" + IP + ":" + PORT + "/bug/v1/savebrowser", pJsonData,
                     function (data, status) {
@@ -559,7 +688,7 @@ function browserData(pdata) {
     html += '<th scope="col-sm-3">Browser</th><th></th><th></th></tr></thead>';
     if (pdata.length !== 0)
         for (let i = 0; i < pdata.length; i++) {
-            html += '<tr><td>' + pdata[i].browser + '</td><td><a href="javascript:editBrowser(\'' + pdata[i]._id + '\');">Edit</a></td>';
+            html += '<tr><td style="font-size:15px;">' + pdata[i].browser + '</td><td><a href="javascript:editBrowser(\'' + pdata[i]._id + '\');">Edit</a></td>';
             html += '<td><a href="javascript:deleteBrowser(\'' + pdata[i]._id + '\');">Delete</td></tr>';
         }
     $("#browserReport").html(html);
@@ -567,7 +696,7 @@ function browserData(pdata) {
 
 function editBrowser(pbrowserid) /* Edit Browser*/ {
     $.get("http://" + IP + ":" + PORT + "/bug/v1/getbrowserid/" + pbrowserid, function (data, status) {
-        console.log(data);
+        //console.log(data);
         editBrowserdetail(data);
     });
 }
@@ -607,7 +736,7 @@ function saveOs() {
         isUniqueos(hdnosid, os, JsonData)
 
     } else
-        alertmsg('Please fill the OS Name', 'DANGER', 'alertmsg5');
+        alertmsg('Please fill the OS Name', 'WARNING', 'alertmsg5');
 
 }
 
@@ -617,7 +746,7 @@ function isUniqueos(pid = '', pos, pJsonData) /*Check Unique OS */ {
         "id": pid
     }, function (data, status) {
 
-        if (data.count == 0) {
+        if (data.count == 0) {   /*check duplication for OS*/
             if (pid == '') {
                 $.post("http://" + IP + ":" + PORT + "/bug/v1/saveos", pJsonData,
                     function (data, status) {
@@ -651,7 +780,7 @@ function osData(pdata) {
     html += '<th scope="col-sm-3">Opersting System</th><th></th><th></th></tr></thead>';
     if (pdata.length !== 0)
         for (let i = 0; i < pdata.length; i++) {
-            html += '<tr><td>' + pdata[i].os + '</td><td><a href="javascript:editOs(\'' + pdata[i]._id + '\');">Edit</a></td>';
+            html += '<tr><td style="font-size:15px;">' + pdata[i].os + '</td><td><a href="javascript:editOs(\'' + pdata[i]._id + '\');">Edit</a></td>';
             html += '<td><a href="javascript:deleteOS(\'' + pdata[i]._id + '\');">Delete</td></tr>';
         }
     $("#osReport").html(html);
@@ -697,7 +826,7 @@ function savePriority() {
     if (isNotempty(priority)) {
         isUniquePriority(hdnpriorityid, priority, JsonData)
     } else
-        alertmsg('Please fill the Priority', 'DANGER', 'alertmsg6');
+        alertmsg('Please fill the Priority', 'WARNING', 'alertmsg6');
 
 }
 
@@ -707,7 +836,7 @@ function isUniquePriority(pid = '', lpriority, pJsonData) /*Check Unique Priorit
         "id": pid
     }, function (data, status) {
 
-        if (data.count == 0) {
+        if (data.count == 0) {   /*Check duplication for OS*/
             if (pid == '') {
                 $.post("http://" + IP + ":" + PORT + "/bug/v1/savepriority", pJsonData,
                     function (data, status) {
@@ -741,7 +870,7 @@ function priorityData(pdata) {
     html += '<th scope="col-sm-3">Priority</th><th></th><th></th></tr></thead>';
     if (pdata.length !== 0)
         for (let i = 0; i < pdata.length; i++) {
-            html += '<tr><td>' + pdata[i].priority + '</td><td><a href="javascript:editPriority(\'' + pdata[i]._id + '\');">Edit</a></td>';
+            html += '<tr><td style="font-size:15px;">' + pdata[i].priority + '</td><td><a href="javascript:editPriority(\'' + pdata[i]._id + '\');">Edit</a></td>';
             html += '<td><a href="javascript:deletePriority(\'' + pdata[i]._id + '\');">Delete</td></tr>';
         }
     $("#priorityReport").html(html);
@@ -780,9 +909,9 @@ function bug() {
 
     var hdnbugid = $("#hdnbugid").val();
     var prev_assign = $("#hdnassign").val();
-    console.log(prev_assign);
+    //console.log(prev_assign);
     var new_assign = $("#assign").val();
-    console.log(new_assign);
+    //console.log(new_assign);
     var prev_status = $("#hdnstatus").val();
     var new_status = $("#status").val();
     //console.log(new_status);
@@ -821,7 +950,7 @@ function bug() {
             };
 
             $.post("http://" + IP + ":" + PORT + "/bug/v1/savebug", JsonData, function (data, status) {
-                console.log(data);
+                //console.log(data);
                 alertmsg('Bugs Saved successfully', 'SUCCESS', 'alertmsg7');
 
                 clear(['bugId', 'desp', 'created', 'fixed', 'cat', 'status', 'pre', 'browser2',
@@ -999,7 +1128,7 @@ function getBugReport(pdocid = '', paction = '') {
     $.post("http://" + IP + ":" + PORT + "/bug/v1/getbug", json, function (data, status) {
         if(data.length > 0)
         {
-            console.log(data);
+            //console.log(data);
 
             var docid = getLastdocument(data, paction);
             var prdocid = getFirstdocument(data, paction);
@@ -1033,10 +1162,10 @@ function DisplayBugReport(pdata, pDocId, prdocid, paction = '') {
 
     if (paction == "next" || paction == '') {
         for (let i = 0; i < pdata.length; i++) {
-            html += '<tr><td>' + pdata[i].bugid + '</td><td>' + pdata[i].desc + '</td>';
-            html += '<td>' + pdata[i].category + '</td><td>' + pdata[i].status + '</td>';
-            html += '<td>' + pdata[i].created + '</td><td>' + pdata[i].assign + '</td>';
-            html += '<td>' + pdata[i].fixedBy + '</td><td>' + pdata[i].fixedon + '</td>';
+            html += '<tr><td style="font-size:15px;">' + pdata[i].bugid + '</td><td style="font-size:15px;">'+ pdata[i].desc + '</td>';
+            html += '<td style="font-size:15px;">'+ pdata[i].category + '</td><td style="font-size:15px;">'+ pdata[i].status + '</td>';
+            html += '<td style="font-size:15px;">' + pdata[i].created + '</td><td style="font-size:15px;">' + pdata[i].assign + '</td>';
+            html += '<td style="font-size:15px;">' + pdata[i].fixedBy + '</td><td style="font-size:15px;">' + pdata[i].fixedon + '</td>';
 
 
             html += '<td><a href="javascript:editBug(\'' + pdata[i]._id + '\');">Edit</a></td>';
@@ -1047,10 +1176,10 @@ function DisplayBugReport(pdata, pDocId, prdocid, paction = '') {
     } else if (paction === "prev") {
         for (let i = pdata.length - 1; i >= 0; i--) {
 
-            html += '<tr><td>' + pdata[i].bugid + '</td><td>' + pdata[i].desc + '</td>';
-            html += '<td>' + pdata[i].category + '</td><td>' + pdata[i].status + '</td>';
-            html += '<td>' + pdata[i].created + '</td><td>' + pdata[i].assign + '</td>';
-            html += '<td>' + pdata[i].fixedBy + '</td><td>' + pdata[i].fixedon + '</td>';
+            html += '<tr><td style="font-size:15px;">' + pdata[i].bugid + '</td><td style="font-size:15px;">' + pdata[i].desc + '</td>';
+            html += '<td style="font-size:15px;">'+ pdata[i].category + '</td><td style="font-size:15px;">' + pdata[i].status + '</td>';
+            html += '<td style="font-size:15px;">'+ pdata[i].created + '</td><td style="font-size:15px;">' + pdata[i].assign + '</td>';
+            html += '<td style="font-size:15px;">'+ pdata[i].fixedBy + '</td><td style="font-size:15px;">' + pdata[i].fixedon + '</td>';
 
 
             html += '<td><a href="javascript:editBug(\'' + pdata[i]._id + '\');">Edit</a></td>';
@@ -1064,7 +1193,7 @@ function DisplayBugReport(pdata, pDocId, prdocid, paction = '') {
 
 }
 
-function next(pdocid) {
+function next(pdocid) {    /*Function to work for next button*/
     var currPage = $("#hdnpageno1").val();
     var totalPage = $("#hdntotalpages1").val();
     if(currPage <= totalPage)
@@ -1076,7 +1205,7 @@ function next(pdocid) {
     getBugReport(pdocid, "next");
 }
 
-function prev(pdocid) {
+function prev(pdocid) {       /*Function to work for previous button*/
 
     var currPage = $("#hdnpageno1").val();
     if(currPage > 1)
@@ -1087,7 +1216,7 @@ function prev(pdocid) {
     getBugReport(pdocid, "prev")
 }
 
-function getLastdocument(pjson, paction) {
+function getLastdocument(pjson, paction) {   /*function to get Last document id*/
     var docPos;
     if (paction == 'prev')
         docPos = 0;
@@ -1100,13 +1229,13 @@ function getLastdocument(pjson, paction) {
 }
 
 
-function getFirstdocument(pjson, paction) {
+function getFirstdocument(pjson, paction) {     /*function to get First document id*/
     var docPos;
     if (paction == 'prev')
         docPos = pjson.length - 1;
     else
         docPos = 0;
-    console.log(pjson[docPos]._id)
+    //console.log(pjson[docPos]._id)
     return pjson[docPos]._id
 }
 
@@ -1256,23 +1385,23 @@ function displaySearch(pdata, pDocId = '', prdocid = '', paction = '') {
     
     let lnextstr = (currPage <= totpage || currPage == 1) ? '<a href="javascript:snext(\'' + pDocId + '\');">Next &gt;&gt;</a>' : '';
     
-    let lprevstr = (currPage > 1) ? '<a href="javascript:sprev(\'' + prdocid + '\')">&lt;&lt; Prev</a>' : '';
+    let lprevstr =  (currPage > 1) ? '<a href="javascript:sprev(\'' + prdocid + '\')">&lt;&lt; Prev</a>' : '';
 
     if (paction === "next" || paction == '' || pDocId == '' || prdocid == '') {
         for (let i = 0; i < pdata.length; i++) {
-            html += '<tr><td>' + pdata[i].bugid + '</td><td>' + pdata[i].desc + '</td>';
-            html += '<td>' + pdata[i].category + '</td><td>' + pdata[i].status + '</td>';
-            html += '<td>' + pdata[i].created + '</td><td>' + pdata[i].assign + '</td>';
-            html += '<td>' + pdata[i].fixedBy + '</td><td>' + pdata[i].fixedon + '</td></tr>';
+            html += '<tr><td style="font-size:15px;">' + pdata[i].bugid + '</td><td style="font-size:15px;">' + pdata[i].desc + '</td>';
+            html += '<td style="font-size:15px;">' + pdata[i].category + '</td><td style="font-size:15px;">'+ pdata[i].status + '</td>';
+            html += '<td style="font-size:15px;">' + pdata[i].created + '</td><td style="font-size:15px;">' + pdata[i].assign + '</td>';
+            html += '<td style="font-size:15px;">' + pdata[i].fixedBy + '</td><td style="font-size:15px;">' + pdata[i].fixedon + '</td></tr>';
         }
         html += '<tr><td colspan="10">' + lprevstr + '&nbsp;&nbsp;' + lnextstr + '</td></tr>';
     } else if (paction === "prev") {
         for (let i = pdata.length - 1; i >= 0; i--) {
 
-            html += '<tr><td>' + pdata[i].bugid + '</td><td>' + pdata[i].desc + '</td>';
-            html += '<td>' + pdata[i].category + '</td><td>' + pdata[i].status + '</td>';
-            html += '<td>' + pdata[i].created + '</td><td>' + pdata[i].assign + '</td>';
-            html += '<td>' + pdata[i].fixedBy + '</td><td>' + pdata[i].fixedon + '</td>';
+            html += '<tr><td style="font-size:15px;">' + pdata[i].bugid + '</td><td style="font-size:15px;">' + pdata[i].desc + '</td>';
+            html += '<td style="font-size:15px;">' + pdata[i].category + '</td><td style="font-size:15px;">' + pdata[i].status + '</td>';
+            html += '<td style="font-size:15px;">' + pdata[i].created + '</td><td style="font-size:15px;">' + pdata[i].assign + '</td>';
+            html += '<td style="font-size:15px;">' + pdata[i].fixedBy + '</td><td style="font-size:15px;">' + pdata[i].fixedon + '</td>';
 
 
             html += '<td><a href="javascript:editBug(\'' + pdata[i]._id + '\');">Edit</a></td>';
@@ -1319,10 +1448,10 @@ function sprev(pdocid) {
 
 
 function totalPage(pcollection, pjson, phdnpageno) {
-    if (pcollection === 'bug'){
-        //pjson["mkey"] = ["bugid","category","status","assign"];
+    /*if (pcollection === 'bug'){
+        pjson["mkey"] = ["bugid","category","status","assign"];
         console.log(pjson);
-    }
+    }*/
     $.post("http://" + IP + ":" + PORT + "/bug/v1/getrowcount/" + pcollection, pjson, function (data, status) {
 
         var totalRow = data.row;
@@ -1332,7 +1461,411 @@ function totalPage(pcollection, pjson, phdnpageno) {
     });
 }
 
-//let ljson = {"category":"test10", "dsadsd":"10", "mkey" : { "category": ""}};
-//console.log(ljson.mkey);
 
-//totalPage('bug',{"category" : "10", "mkey":{"category":""}},'#hdnpageno');
+
+function userLog()
+{
+    var userid = $("#userid").val();
+    var password = $("#password").val();
+    
+    var json = {"userid":userid,"password":password};
+    if (checkMandatoryLog(['userid','password'], ['Userid','Password']))
+    {
+        let request =$.ajax({
+            url: "http://" + IP + ":" + PORT +"/bug/v1/login",
+            type: "post",
+            data: json,
+            success: function()
+            {
+                //console.log("submitted successfully");
+                window.location.href = 'index.html';
+            },
+            error:function(){
+                alert("Invalid userId and Password");
+                window.location.href = 'login.html';
+            }  
+        });
+    }
+    
+       
+    
+    
+    
+}
+    
+function checkMandatoryLog(pfield, pDasc) {
+    let status = true,
+        obj;
+    for (let i = 0; i < pfield.length; i++) {
+        obj = '#' + pfield[i];
+        if ($(obj).val() == '') {
+            alertmsg(pDasc[i] + ' Cannot be Empty', 'FAILURE', 'logmsg');
+            $(obj).focus();
+            status = false;
+            break;
+        }
+
+    }
+    return status;
+}
+
+
+function modules()
+{
+    var hdnmoduleid = $("#hdnmoduleid").val();
+    var module_name = $("#module_name").val();
+  
+    if (isNotempty(module_name))
+    {
+        if(isallLetter(module_name)){
+            if(minCharacter(module_name))
+            {
+                var JsonData = { "module_name": module_name};
+                ismoduleexists(module_name, JsonData, hdnmoduleid);
+            }
+            else
+                alertmsg('Please enter minimum 5 character','WARNING','alertmsg9');
+        }else
+            alertmsg('Please enter the alphabet only', 'WARNING', 'alertmsg9');
+            clear(['hdnmoduleid', 'module_name']);
+    }else     
+        alertmsg('Please fill the Module Name', 'WARNING', 'alertmsg9');
+        clear(['hdnmoduleid', 'module_name']);
+}
+
+
+function ismoduleexists(pmodule_name, pJsonData, pid = ''){
+    $.post("http://" + IP + ":" + PORT + "/bug/v1/moduleexist",{
+        "module_name": pmodule_name,
+        "id": pid
+    }, function (data, status) {
+        
+        if (data.count == 0) {
+            
+            if (pid == '') {
+                $.post("http://" + IP + ":" + PORT + "/bug/v1/addmodule", pJsonData,
+                    function (data, status) {
+                        alertmsg('Saved Successfully', 'SUCCESS', 'alertmsg9');
+                        clear(['hdnmoduleid', 'module_name']);
+                        displaymodule();
+                    }
+                );
+            } else {
+                $.post("http://" + IP + ":" + PORT + "/bug/v1/updatemodule/" + pid, pJsonData,
+                    function (data, status) {
+                        alertmsg('Update Data Saved Successfully', 'SUCCESS', 'alertmsg9');
+                        clear(['hdnmoduleid', 'module_name']);
+                        displaymodule();
+                    }
+                );
+                
+            }
+        } else
+            alertmsg('This module already exists', 'DANGER', 'alertmsg9');
+            clear(['hdnmoduleid', 'module_name']);
+        displaymodule();
+    });
+
+}
+
+function displaymodule()
+{
+    $.get("http://" + IP + ":" + PORT + "/bug/v1/getmodule" , function(data,status){
+        moduledata(data);
+        //compareString(data,'')   
+    });
+    
+    
+
+}
+
+
+
+function moduledata(pdata)
+{
+    let html = '<thead><tr>';
+    html += '<th scope="col-sm-3">Module Name</th><th></th><th></th></tr></thead>';
+    if (pdata.length !== 0)
+        for (let i = 0; i < pdata.length; i++) {
+            html += '<tr><td style="font-size:15px;">' + pdata[i].module_name + '</td><td><a href="javascript:editmodule(\'' + pdata[i]._id + '\');">Edit</a></td>';
+            html += '<td><a href="javascript:deleteModule(\'' + pdata[i]._id + '\',\'' + escape(pdata[i].module_name) + '\' );">Delete</a></td></tr>';
+        }
+    $("#moduleReport").html(html);
+    //console.log(pdata);
+}
+
+
+function editmodule(pmoduleid){
+    $.get("http://" + IP + ":" + PORT + "/bug/v1/getmoduleid/" + pmoduleid, function (data, status) {
+            //console.log(data);
+            editModule(data);
+           
+        });
+}
+    
+    
+function editModule(pdata) 
+{
+    for (var i = 0; i < pdata.length; i++) 
+    {
+        $("#module_name").val(pdata[i].module_name);
+        $("#hdnmoduleid").val(pdata[i]._id);
+         
+    
+    }
+}
+    
+function deleteModule(Id,pModule)
+{
+    var json = {"module[]":pModule};
+    var r = confirm("Are you sure wanted to delete?!");
+    if (r == true) 
+    {
+        $.post("http://" + IP + ":" + PORT + "/bug/v1/deletemodule/" + Id,json, function (data, status){
+            $.get("http://" + IP + ":" + PORT + "/bug/v1/getmsg/" + data.msgcode, function (data, status) {
+                alertmsg(data.message, 'DANGER', 'alertmsg9');
+                displaymodule()
+            });
+        });
+    }else
+        alertmsg('You Cancelled', 'DANGER', 'alertmsg9');
+    displaymodule();
+}
+    
+
+
+
+
+
+
+function minCharacter(ptext)
+{
+    if(ptext.length >= 5)
+    {
+        //console.log("true");
+        return true;
+    }else
+        //console.log("false");
+        return false;
+}
+
+
+/* group name module start */
+function groupName()
+{
+    var hdngroupid =  $("#hdngroupid").val();
+    var group_name = $("#group_name").val();
+   
+
+    
+    if(isNotempty(group_name))
+    {
+        if(isallLetter(group_name))
+        {
+            if( minCharacter(group_name))
+            {
+                var JsonData = {"group_name": group_name};
+                
+                JsonData["modules"] = getModuleJson(); ;
+                
+                console.log(JsonData);
+                isgroupsexists(group_name,JsonData, hdngroupid);
+            }else
+                alertmsg('Please enter minimum 5 character', 'WARNING', 'alertmsg10');
+                clear(['hdngroupid','group_name']);
+
+        }else
+            alertmsg('Please enter the Alphanumeric, Should start with character only', 'WARNING', 'alertmsg10');
+            clear(['hdngroupid','group_name']);
+
+    }else     
+        alertmsg('Please fill the Groups Name', 'DANGER', 'alertmsg10');
+        clear(['hdngroupid','group_name']);
+}
+
+function isgroupsexists(pgroup_name,pJsonData , pid=''){ 
+    
+    $.post("http://" + IP + ":" + PORT + "/bug/v1/groupsexist", {
+    "group_name": pgroup_name,
+    "id": pid
+ 
+    },function (data, status){
+        
+        if (data.count == 0) {   /*Check for duplication */
+            if (pid == '') {
+                $.post("http://" + IP + ":" + PORT + "/bug/v1/addgroups", pJsonData,
+                    function (data, status) {
+                        alertmsg('Saved Successfully', 'SUCCESS', 'alertmsg10');
+                        clear(['hdngroupid', 'group_name']);
+                        setModuleUnchecked();
+             
+                        displaygroup();
+                    }
+                );
+            } else {
+                $.post("http://" + IP + ":" + PORT + "/bug/v1/updategroups/" + pid, pJsonData,
+                    function (data, status) {
+                        alertmsg('Update Data Saved Successfully', 'SUCCESS', 'alertmsg10');
+                        clear(['hdngroupid', 'group_name']);
+                        displaygroup();
+                        setModuleUnchecked();
+                    }
+                );
+            }
+        } else
+            alertmsg('This Group Name already exists', 'DANGER', 'alertmsg10');
+            clear(['hdngroupid', 'group_name']);
+            displaygroup();
+            setModuleUnchecked();
+    });
+
+}
+
+function displaygroup()
+{
+    $.get("http://" + IP + ":" + PORT + "/bug/v1/getgroups" , function(data,status){
+        groupdata(data);
+    });
+}
+
+function groupdata(pdata)
+{
+    let html = '<thead><tr>';
+    html += '<th scope="col-sm-3"></th><th></th><th></th></tr></thead>';
+    if (pdata.length !== 0)
+        for (let i = 0; i < pdata.length; i++) {
+            html += '<tr><td>' + pdata[i].group_name + '</td><td><a href="javascript:editgroup(\'' + pdata[i]._id + '\');">Edit</a></td>';
+            html += '<td><a href="javascript:deletegroup(\'' + pdata[i]._id + '\');">Delete</td></tr>';
+            //console.log(pdata,pdata[i]["modules[]"]);
+
+        }
+    $("#groupReport").html(html);
+   
+    
+}
+
+
+function editgroup(pgroupid)
+{
+    $.get("http://" + IP + ":" + PORT + "/bug/v1/getgroupid/" + pgroupid, function (data, status) {
+            //console.log(data);
+            editGroupdata(data);
+            displaygroup();
+            
+        });
+}
+    
+    
+function editGroupdata(pdata) 
+{
+    for (var i = 0; i < pdata.length; i++) 
+    {
+        $("#group_name").val(pdata[i].group_name);
+        $("#hdngroupid").val(pdata[i]._id);
+        setModuleChecked(pdata[i]["modules[]"]);
+        displaygroup();
+    }
+    
+}
+    
+function deletegroup(Id)
+{
+    var r = confirm("Are you sure wanted to delete?!");
+    if (r == true) 
+    {
+        $.get("http://" + IP + ":" + PORT + "/bug/v1/deletegroups/" + Id, function (data, status) {
+                alertmsg('Deleted successfully !', 'DANGER', 'alertmsg10');
+                clear(['hdngroupid', 'group_name']);
+                setModuleUnchecked();
+                displaygroup();
+            });
+    }else
+        alertmsg('You Cancelled', 'DANGER', 'alertmsg10');
+        clear(['hdngroupid', 'group_name']);
+        setModuleUnchecked();
+    displaygroup();
+}
+
+
+function isallLetter(ptext)
+{
+   var letters = /^[a-zA-Z\s]|[a-z][0-9]/
+   if(ptext.match(letters))
+     {
+      return true;
+     }
+   else
+     {
+     return false;
+     }
+}
+
+
+
+function getmodule()
+{
+$.get("http://" + IP + ":" + PORT + "/bug/v1/getmodule" , function(data,status){
+    //console.log(data);
+    displayModule(data);
+    
+    });
+}
+
+function displayModule(pdata)
+{
+    let html = '<thead><tr>';
+    html += '<th><input type="checkbox" name="module" id="checkall"  onClick="checkModule(this)" >Select All</th><th>Modules Name</th><th></th></tr></thead>';
+    //html += '<tr><td><input type="checkbox" id="checkall">Select All</td></tr>';
+    for (let i = 0; i < pdata.length; i++)                      
+    { 
+        html +='<tr><td><input type="checkbox" name="module" value="' + pdata[i].module_name + '"></td><td>'+ pdata[i].module_name +'</td></tr>';
+    }    
+    $("#check").html(html);
+    
+}
+
+function getModuleJson()
+{
+    var strJson = [];
+    
+    $.each($("input[name='module']:checked"), function(){
+        strJson.push($(this).val()) ;
+    });
+    
+    console.log(strJson);
+    return strJson;          
+    
+}
+
+function setModuleChecked(pmodule)  /*Function to check the module on edit group*/
+{
+    $.each($("input[name='module']"), function(index, value){
+        $(value).prop("checked",false);
+       if (Array.isArray(pmodule)) {
+        for (var i=0; i < pmodule.length; i++) {
+            if ($(value).val() == pmodule[i] ) {
+                $(value).prop("checked",true);
+                break;
+            }
+        }
+    } else {
+        if ($(value).val() == pmodule ) {
+            $(value).prop("checked",true);
+        }
+    }
+    });
+}
+
+function setModuleUnchecked()
+{
+    $.each($("input[name='module']:checked"), function(index, value){
+        $(value).prop("checked",false);
+    });
+}
+ 
+function checkModule(source) {
+    var checkboxes = document.getElementsByName('module');
+    for(var i in checkboxes)
+        checkboxes[i].checked = source.checked;
+}
+
