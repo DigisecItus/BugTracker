@@ -98,7 +98,6 @@ function showBugRegion() {
     getuserid();
     getBugid();
     assignDate();
-    assignFixeddate();
     $("#bugId").prop("disabled", true);
     getBugReport();
 }
@@ -199,6 +198,20 @@ function alertmsg(pmsg, pmsgtype, pshow) {
 function clear(arrFlds) {
     for (let i = 0; i < arrFlds.length; i++)
         $("#" + arrFlds[i]).val('');
+}
+
+function isSpecialCharacter(str)
+{
+  var format = /^[A-Za-z0-9 ]+$/
+  
+  if(str.match(format))
+  {
+    return true;
+  }
+  else 
+  {
+    return false;
+  }
 }
 
 /*---------------------------------------------------------------------------------------*/
@@ -309,8 +322,8 @@ function mapUserData(pData) {
     if (pData.length != 0) {
         for (let i = 0; i < pData.length; i++) {
             html += '<tr><td style="font-size:15px;">' + pData[i].firstname + '</td><td style="font-size:15px;">' + pData[i].lastname + '</td>';
-            html += '<td style="font-size:15px;">' + pData[i].userid +'</td><td><a href="javascript:editUser(\'' + pData[i]._id + '\');">Edit</a></td>';
-            html += '<td><a href="javascript:deleteUser(\'' + pData[i]._id + '\');">Delete</td></tr>';
+            html += '<td style="font-size:15px;">' + pData[i].userid +'</td><td><a href="javascript:editUser(\'' + pData[i]._id + '\');"style="font-size:15px;">Edit</a></td>';
+            html += '<td><a href="javascript:deleteUser(\'' + pData[i]._id + '\');" style="font-size:15px;">Delete</td></tr>';
         }
     }
     $("#CatReport").html(html);
@@ -504,8 +517,8 @@ function categorydata(pdata) {
     html += '<th scope="col-sm-3"style="font-size:15px;">Category Name</th><th></th><th></th></tr></thead>';
     if (pdata.length !== 0)
         for (let i = 0; i < pdata.length; i++) {
-            html += '<tr><td style="font-size:15px;">' + pdata[i].categoryname + '</td><td><a href="javascript:editCategory(\'' + pdata[i]._id + '\');">Edit</a></td>';
-            html += '<td><a href="javascript:deleteCategory(\'' + pdata[i]._id + '\');">Delete</td></tr>';
+            html += '<tr><td style="font-size:15px;">' + pdata[i].categoryname + '</td><td><a href="javascript:editCategory(\'' + pdata[i]._id + '\')"style="font-size:15px;">Edit</a></td>';
+            html += '<td><a href="javascript:deleteCategory(\'' + pdata[i]._id + '\',\''+ escape(pdata[i].categoryname) +'\')"style="font-size:15px;">Delete</td></tr>';
         }
     $("#categoryReport").html(html);
 }
@@ -525,14 +538,31 @@ function editCategorydetail(pdata) {
     }
 }
 
-function deleteCategory(Id) /* delete Category */ {
+
+ /* delete Category */
+function deleteCategory(Id,pCategoryname) {
+    var json = {"category":pCategoryname}
     var r = confirm("Are you sure wanted to delete?!");
+    var msgcode,msg;
 
     if (r == true) {
-        $.get("http://" + IP + ":" + PORT + "/bug/v1/deletecategory/" + Id, function (data, status) {
-            alertmsg('Deleted successfully !', 'DANGER', 'alertmsg2');
-            displayCategory();
-        });
+        $.post("http://" + IP + ":" + PORT + "/bug/v1/deletecategory/" + Id,json, function (data, status) {
+            if(data.status == 400)
+            {
+                msgcode = 'DELETE_CATEGORY_SUCCESSFULLY'
+                msg = 'SUCCESS'
+            }
+            else if(data.status == 200)
+            {
+                msgcode = 'DELETE_CATEGORY_UNSUCCESSFULLY'
+                msg = 'DANGER'
+            }
+            $.get("http://" + IP + ":" + PORT + "/bug/v1/getmsg/" + msgcode, function (data, status) {
+                alertmsg(data.message, msg, 'alertmsg2');
+                displayCategory();
+            });
+        })
+    
     } else
         alertmsg('You Cancelled', 'DANGER', 'alertmsg2');
     displayCategory();
@@ -596,8 +626,8 @@ function statusData(pdata) {
     html += '<th scope="col-sm-3">Status Name</th><th></th><th></th></tr></thead>';
     if (pdata.length !== 0)
         for (let i = 0; i < pdata.length; i++) {
-            html += '<tr><td style="font-size:15px;">' + pdata[i].statusname + '</td><td><a href="javascript:editStatus(\'' + pdata[i]._id + '\');">Edit</a></td>';
-            html += '<td><a href="javascript:deleteStatus(\'' + pdata[i]._id + '\');">Delete</td></tr>';
+            html += '<tr><td style="font-size:15px;">' + pdata[i].statusname + '</td><td><a href="javascript:editStatus(\'' + pdata[i]._id + '\');"style="font-size:15px;">Edit</a></td>';
+            html += '<td><a href="javascript:deleteStatus(\'' + pdata[i]._id + '\');"style="font-size:15px;">Delete</td></tr>';
         }
     $("#statusReport").html(html);
 }
@@ -688,8 +718,8 @@ function browserData(pdata) {
     html += '<th scope="col-sm-3">Browser</th><th></th><th></th></tr></thead>';
     if (pdata.length !== 0)
         for (let i = 0; i < pdata.length; i++) {
-            html += '<tr><td style="font-size:15px;">' + pdata[i].browser + '</td><td><a href="javascript:editBrowser(\'' + pdata[i]._id + '\');">Edit</a></td>';
-            html += '<td><a href="javascript:deleteBrowser(\'' + pdata[i]._id + '\');">Delete</td></tr>';
+            html += '<tr><td style="font-size:15px;">' + pdata[i].browser + '</td><td><a href="javascript:editBrowser(\'' + pdata[i]._id + '\');"style="font-size:15px;">Edit</a></td>';
+            html += '<td><a href="javascript:deleteBrowser(\'' + pdata[i]._id + '\');"style="font-size:15px;">Delete</td></tr>';
         }
     $("#browserReport").html(html);
 }
@@ -780,8 +810,8 @@ function osData(pdata) {
     html += '<th scope="col-sm-3">Opersting System</th><th></th><th></th></tr></thead>';
     if (pdata.length !== 0)
         for (let i = 0; i < pdata.length; i++) {
-            html += '<tr><td style="font-size:15px;">' + pdata[i].os + '</td><td><a href="javascript:editOs(\'' + pdata[i]._id + '\');">Edit</a></td>';
-            html += '<td><a href="javascript:deleteOS(\'' + pdata[i]._id + '\');">Delete</td></tr>';
+            html += '<tr><td style="font-size:15px;">' + pdata[i].os + '</td><td><a href="javascript:editOs(\'' + pdata[i]._id + '\');"style="font-size:15px;">Edit</a></td>';
+            html += '<td><a href="javascript:deleteOS(\'' + pdata[i]._id + '\');"style="font-size:15px;">Delete</td></tr>';
         }
     $("#osReport").html(html);
 }
@@ -870,8 +900,8 @@ function priorityData(pdata) {
     html += '<th scope="col-sm-3">Priority</th><th></th><th></th></tr></thead>';
     if (pdata.length !== 0)
         for (let i = 0; i < pdata.length; i++) {
-            html += '<tr><td style="font-size:15px;">' + pdata[i].priority + '</td><td><a href="javascript:editPriority(\'' + pdata[i]._id + '\');">Edit</a></td>';
-            html += '<td><a href="javascript:deletePriority(\'' + pdata[i]._id + '\');">Delete</td></tr>';
+            html += '<tr><td style="font-size:15px;">' + pdata[i].priority + '</td><td><a href="javascript:editPriority(\'' + pdata[i]._id + '\');"style="font-size:15px;">Edit</a></td>';
+            html += '<td><a href="javascript:deletePriority(\'' + pdata[i]._id + '\',\''+ escape(pdata[i].priority)+ '\');"style="font-size:15px;">Delete</td></tr>';
         }
     $("#priorityReport").html(html);
 }
@@ -891,13 +921,28 @@ function editpriority(pdata) {
     }
 }
 
-function deletePriority(Id) /* Delete Priority */ {
+function deletePriority(Id,pPriorityname) /* Delete Priority */ {
+    var json = {"priority":pPriorityname}
     var r = confirm("Are you sure wanted to delete?!");
+    var msgcode,msg;
 
     if (r == true) {
-        $.get("http://" + IP + ":" + PORT + "/bug/v1/deletepriority/" + Id, function (data, status) {
-            alertmsg('Deleted successfully !', 'DANGER', 'alertmsg6');
-            displayPriority();
+        $.post("http://" + IP + ":" + PORT + "/bug/v1/deletepriority/" + Id,json, function (data, status) {
+            if(data.status == 400)
+            {
+                msgcode = 'DELETE_PRIORITY_SUCCESSFULLY'
+                msg = 'SUCCESS'
+            }
+            else if(data.status == 200)
+            {
+                msgcode = 'DELETE_PRIORITY_UNSUCCESSFULLY'
+                msg = 'DANGER'
+            }
+            $.get("http://" + IP + ":" + PORT + "/bug/v1/getmsg/" + msgcode, function (data, status) {
+                alertmsg(data.message, msg, 'alertmsg6');
+                displayPriority();
+            });
+
         });
     } else
         alertmsg('You Cancelled', 'DANGER', 'alertmsg6');
@@ -928,11 +973,7 @@ function bug() {
     var fixedBy = $("#fixedby").val();
 
     if (checkMandatory(['desp', 'cat', 'pre', 'browser2', 'os2'], ['Description', 'Category', 'Priority', 'Browser', 'os'])) {
-        //console.log('Passed test');
-
-        //$.post("http://"+IP+":"+PORT+"/bug/v1/bugcount", {"desc" : desc,"hdnbugid":hdnbugid}, function(data,status){
-        //  console.log(data);
-        //if(data.count == 0){
+        
 
         if (hdnbugid == '') {
             var JsonData = {
@@ -959,6 +1000,7 @@ function bug() {
                 getBugReport();
                 getBugid();
                 assignDate();
+                assignFixeddate();
                 $("#bugId").prop("disabled", true);
             });
         } else {
@@ -992,6 +1034,7 @@ function bug() {
                     getBugReport();
                     getBugid();
                     assignDate();
+                    assignFixeddate();
                 });
             });
         }
@@ -1128,8 +1171,6 @@ function getBugReport(pdocid = '', paction = '') {
     $.post("http://" + IP + ":" + PORT + "/bug/v1/getbug", json, function (data, status) {
         if(data.length > 0)
         {
-            //console.log(data);
-
             var docid = getLastdocument(data, paction);
             var prdocid = getFirstdocument(data, paction);
             if(paction =='')
@@ -1138,10 +1179,20 @@ function getBugReport(pdocid = '', paction = '') {
             }
         }
         DisplayBugReport(data, docid, prdocid, paction);
+        //hideNxtButton();
     });
 
 }
 
+let hideNxtButton = () => {
+    var totpage = $("#hdntotalpages1").val();
+    var currPage = $("#hdnpageno1").val();
+    if(currPage >= totpage)
+        $("#nxt").hide();
+    else
+        $("#nxt").show();
+
+}
 
 function DisplayBugReport(pdata, pDocId, prdocid, paction = '') {
     let html = '<thead><tr>';
@@ -1156,8 +1207,8 @@ function DisplayBugReport(pdata, pDocId, prdocid, paction = '') {
 
     var totpage = $("#hdntotalpages1").val();
     var currPage = $("#hdnpageno1").val();
-    let lnext = (currPage <= totpage || currPage == 1) ? '<a href="javascript:next(\'' + pDocId + '\');">Next &gt;&gt;</a>' : '';
-    let lprev = (currPage > 1) ? '<a href="javascript:prev(\'' + prdocid + '\')">&lt;&lt; Prev</a>' : '';
+    let lnext = (currPage < totpage || currPage == 1) ? '<a id="nxt" href="javascript:next(\'' + pDocId + '\');"style="font-size:15px;">Next &gt;&gt;</a>' : '';
+    let lprev = (currPage > 1) ? '<a href="javascript:prev(\'' + prdocid + '\')"style="font-size:15px;">&lt;&lt; Prev</a>' : '';
 
 
     if (paction == "next" || paction == '') {
@@ -1168,8 +1219,8 @@ function DisplayBugReport(pdata, pDocId, prdocid, paction = '') {
             html += '<td style="font-size:15px;">' + pdata[i].fixedBy + '</td><td style="font-size:15px;">' + pdata[i].fixedon + '</td>';
 
 
-            html += '<td><a href="javascript:editBug(\'' + pdata[i]._id + '\');">Edit</a></td>';
-            html += '<td><a href="javascript:deleteBug(\'' + pdata[i]._id + '\');">Delete</td></tr>';
+            html += '<td><a href="javascript:editBug(\'' + pdata[i]._id + '\');"style="font-size:15px;">Edit</a></td>';
+            html += '<td><a href="javascript:deleteBug(\'' + pdata[i]._id + '\');"style="font-size:15px;">Delete</td></tr>';
 
         }
         html += '<tr><td colspan="10">' + lprev + '&nbsp;&nbsp;'+ lnext + '</td></tr>';
@@ -1182,8 +1233,8 @@ function DisplayBugReport(pdata, pDocId, prdocid, paction = '') {
             html += '<td style="font-size:15px;">'+ pdata[i].fixedBy + '</td><td style="font-size:15px;">' + pdata[i].fixedon + '</td>';
 
 
-            html += '<td><a href="javascript:editBug(\'' + pdata[i]._id + '\');">Edit</a></td>';
-            html += '<td><a href="javascript:deleteBug(\'' + pdata[i]._id + '\');">Delete</td></tr>';
+            html += '<td><a href="javascript:editBug(\'' + pdata[i]._id + '\');"style="font-size:15px;">Edit</a></td>';
+            html += '<td><a href="javascript:deleteBug(\'' + pdata[i]._id + '\');"style="font-size:15px;">Delete</td></tr>';
 
         }
         html += '<tr><td colspan="10">' + lprev + '&nbsp;&nbsp;'+ lnext +'</td></tr>';
@@ -1216,15 +1267,16 @@ function prev(pdocid) {       /*Function to work for previous button*/
     getBugReport(pdocid, "prev")
 }
 
-function getLastdocument(pjson, paction) {   /*function to get Last document id*/
+function getLastdocument(pjson, paction){   /*function to get Last document id*/
     var docPos;
     if (paction == 'prev')
+    {
         docPos = 0;
+    }
     else
+    {
         docPos = pjson.length - 1;
-    //console.log(docLength);
-
-
+    }
     return pjson[docPos]._id;
 }
 
@@ -1259,17 +1311,14 @@ function editBugReport(pdata) {
         $("#desp").val(pdata[i].desc);
         $("#cat").val(pdata[i].category);
         $("#status").val(pdata[i].status);
-        //console.log("iiiiiii");
         $("#hdnstatus").val(pdata[i].status);
-        //console.log(hdnstatus);
-        //console.log("llllllll");
         $("#created").val(pdata[i].created);
         $("fixedday").val(pdata[i].fixedon);
         $("#assign").val(pdata[i].assign);
         $("#hdnassign").val(pdata[i].assign);
         $("#fixedby").val(pdata[i].fixedBy);
         $("#hdnfixedby").val(pdata[i].fixedby);
-        console.log(hdnassign);
+        
         $("#pre").val(pdata[i].priority);
         $("#browser2").val(pdata[i].browser);
         $("#os2").val(pdata[i].os);
@@ -1286,13 +1335,32 @@ function deleteBug(Id) /* Delete bug*/ {
     if (r == true) {
         $.get("http://" + IP + ":" + PORT + "/bug/v1/deletebug/" + Id, function (data, status) {
             alertmsg('Deleted successfully !', 'DANGER', 'alertmsg7');
-            //getBugReport();
+            $("#hdnpageno1").val("1");
+            getFirstpage();
+            getBugReport();
+            
         });
     } else
         alertmsg('You Cancelled', 'DANGER', 'alertmsg7');
+    getFirstpage();
     getBugReport();
 
 }
+
+function getFirstpage()
+{
+    $.post("http://" + IP + ":" + PORT + "/bug/v1/getbug",function (data, status){
+        
+    });
+
+}
+
+
+
+
+
+
+
 
 
 function getcurrentdate() {
@@ -1301,7 +1369,6 @@ function getcurrentdate() {
     var hh = today.getHours();
     var min = today.getMinutes();
     var sec = today.getSeconds();
-    //console.log(hh,min,sec);
     var dd = today.getDate();
     var mm = today.getMonth() + 1;
     var yyyy = today.getFullYear();
@@ -1325,7 +1392,7 @@ function isvalidateDate(pdate) {
 
 }
 
-function search(pdocid = '', paction = '') {
+function bugSearch(pdocid = '', paction = '') {
     var bugid = $("#Id").val();
     var desc = $("#desc").val();
     var category = $("#catsrc").val();
@@ -1334,15 +1401,16 @@ function search(pdocid = '', paction = '') {
 
 
 
-    if (!isValid(bugid, desc, category, assign, status)) {
-        alert("cannot be empty");
+    if (!isValid(bugid, desc, category, assign, status)){
+        alertmsg('Please enter atleast one detail for search','WARNING','alertmsg8');
     } else {
         var ljson = {
-            "bugid": bugid,
-            "desc": desc,
-            "category": category,
-            "assign": assign,
-            "status": status
+            bugid : bugid,
+            desc : desc,
+            category : category,
+            assign: assign,
+            status : status,
+            mkey : [ "bugid","desc","category","assign","status" ]
         };
         searchBug(ljson, pdocid, paction)
     }
@@ -1369,7 +1437,7 @@ function searchBug(pjson, pdocid = '', paction = '') {
 }
 
 
-function displaySearch(pdata, pDocId = '', prdocid = '', paction = '') {
+function displaySearch(pdata, pDocId , prdocid , paction = '') {
     let html = '<thead><tr>';
     html += '<th scope="col-sm-3">BugID</th>';
     html += '<th scope="col-sm-3">Description</th>';
@@ -1383,11 +1451,10 @@ function displaySearch(pdata, pDocId = '', prdocid = '', paction = '') {
     var totpage = $("#hdntotalpages").val();
     var currPage = $("#hdnpageno").val();
     
-    let lnextstr = (currPage <= totpage || currPage == 1) ? '<a href="javascript:snext(\'' + pDocId + '\');">Next &gt;&gt;</a>' : '';
-    
-    let lprevstr =  (currPage > 1) ? '<a href="javascript:sprev(\'' + prdocid + '\')">&lt;&lt; Prev</a>' : '';
+    let lnextstr = (currPage < totpage || currPage == 1) ? '<a href="javascript:snext(\'' + pDocId + '\');"style="font-size:15px;">Next &gt;&gt;</a>' : '';
+    let lprevstr =  (currPage > 1) ? '<a href="javascript:sprev(\'' + prdocid + '\')"style="font-size:15px;">&lt;&lt; Prev</a>' : '';
 
-    if (paction === "next" || paction == '' || pDocId == '' || prdocid == '') {
+    if (paction == "next" || paction == '' || pDocId == '' || prdocid == '') {
         for (let i = 0; i < pdata.length; i++) {
             html += '<tr><td style="font-size:15px;">' + pdata[i].bugid + '</td><td style="font-size:15px;">' + pdata[i].desc + '</td>';
             html += '<td style="font-size:15px;">' + pdata[i].category + '</td><td style="font-size:15px;">'+ pdata[i].status + '</td>';
@@ -1404,8 +1471,8 @@ function displaySearch(pdata, pDocId = '', prdocid = '', paction = '') {
             html += '<td style="font-size:15px;">' + pdata[i].fixedBy + '</td><td style="font-size:15px;">' + pdata[i].fixedon + '</td>';
 
 
-            html += '<td><a href="javascript:editBug(\'' + pdata[i]._id + '\');">Edit</a></td>';
-            html += '<td><a href="javascript:deleteBug(\'' + pdata[i]._id + '\');">Delete</td></tr>';
+            html += '<td><a href="javascript:editBug(\'' + pdata[i]._id + '\');"style="font-size:15px;">Edit</a></td>';
+            html += '<td><a href="javascript:deleteBug(\'' + pdata[i]._id + '\');"style="font-size:15px;">Delete</td></tr>';
 
         }
         html += '<tr><td colspan="10">' + lprevstr + '&nbsp;&nbsp;' + lnextstr + '</td></tr>';
@@ -1432,7 +1499,7 @@ function snext(pdocid) {
     }
     $("#hdnpageno").val(currPage);
 
-    search(pdocid, "next");
+    bugSearch(pdocid, "next");
 }
 
 function sprev(pdocid) {
@@ -1442,21 +1509,17 @@ function sprev(pdocid) {
         currPage--;
     }
     $("#hdnpageno").val(currPage);
-    search(pdocid, "prev");
+    
+    bugSearch(pdocid, "prev");
 }
 
 
 
 function totalPage(pcollection, pjson, phdnpageno) {
-    /*if (pcollection === 'bug'){
-        pjson["mkey"] = ["bugid","category","status","assign"];
-        console.log(pjson);
-    }*/
+    
     $.post("http://" + IP + ":" + PORT + "/bug/v1/getrowcount/" + pcollection, pjson, function (data, status) {
-
         var totalRow = data.row;
-        console.log(totalRow);
-        $(phdnpageno).val(Math.floor(totalRow / gPagesize));
+        $(phdnpageno).val(Math.ceil(totalRow / gPagesize));
 
     });
 }
@@ -1517,16 +1580,24 @@ function modules()
   
     if (isNotempty(module_name))
     {
-        if(isallLetter(module_name)){
-            if(minCharacter(module_name))
+        if(isallLetter(module_name))
+        {
+            if(isSpecialCharacter(module_name))
             {
-                var JsonData = { "module_name": module_name};
-                ismoduleexists(module_name, JsonData, hdnmoduleid);
+                if(minCharacter(module_name))
+                {
+                    var JsonData = { "module_name": module_name};
+                    ismoduleexists(module_name, JsonData, hdnmoduleid);
+                }
+                else
+                    alertmsg('Please enter minimum 5 character','WARNING','alertmsg9');
+                    clear(['hdnmoduleid', 'module_name']);
             }
             else
-                alertmsg('Please enter minimum 5 character','WARNING','alertmsg9');
+                alertmsg('Please enter proper module name','WARNING','alertmsg9');
+                clear(['hdnmoduleid', 'module_name']);
         }else
-            alertmsg('Please enter the alphabet only', 'WARNING', 'alertmsg9');
+            alertmsg('Please enter the alphabet only.Should start with alphabet only', 'WARNING', 'alertmsg9');
             clear(['hdnmoduleid', 'module_name']);
     }else     
         alertmsg('Please fill the Module Name', 'WARNING', 'alertmsg9');
@@ -1579,16 +1650,14 @@ function displaymodule()
 
 }
 
-
-
 function moduledata(pdata)
 {
     let html = '<thead><tr>';
     html += '<th scope="col-sm-3">Module Name</th><th></th><th></th></tr></thead>';
     if (pdata.length !== 0)
         for (let i = 0; i < pdata.length; i++) {
-            html += '<tr><td style="font-size:15px;">' + pdata[i].module_name + '</td><td><a href="javascript:editmodule(\'' + pdata[i]._id + '\');">Edit</a></td>';
-            html += '<td><a href="javascript:deleteModule(\'' + pdata[i]._id + '\',\'' + escape(pdata[i].module_name) + '\' );">Delete</a></td></tr>';
+            html += '<tr><td style="font-size:15px;">' + pdata[i].module_name + '</td><td><a href="javascript:editmodule(\'' + pdata[i]._id + '\');"style="font-size:15px;">Edit</a></td>';
+            html += '<td><a href="javascript:deleteModule(\'' + pdata[i]._id + '\',\'' + escape(pdata[i].module_name) + '\' );"style="font-size:15px;">Delete</a></td></tr>';
         }
     $("#moduleReport").html(html);
     //console.log(pdata);
@@ -1617,13 +1686,21 @@ function editModule(pdata)
     
 function deleteModule(Id,pModule)
 {
-    var json = {"module[]":pModule};
+    var json = {"modules[]":pModule};
     var r = confirm("Are you sure wanted to delete?!");
+    var msgcode,msg;
     if (r == true) 
     {
         $.post("http://" + IP + ":" + PORT + "/bug/v1/deletemodule/" + Id,json, function (data, status){
-            $.get("http://" + IP + ":" + PORT + "/bug/v1/getmsg/" + data.msgcode, function (data, status) {
-                alertmsg(data.message, 'DANGER', 'alertmsg9');
+            if (data.status == 400) {
+                 msgcode = 'DELETE_MODULE_SUCCESSFULLY'
+                msg = 'SUCCESS'
+            } else if (data.status == 200) {
+                msgcode = 'DELETE_MODULE_UNSUCCESSFULLY'
+                msg = 'DANGER'
+            }
+            $.get("http://" + IP + ":" + PORT + "/bug/v1/getmsg/" + msgcode, function (data, status) {
+                alertmsg(data.message, msg, 'alertmsg9');
                 displaymodule()
             });
         });
@@ -1662,18 +1739,20 @@ function groupName()
     {
         if(isallLetter(group_name))
         {
-            if( minCharacter(group_name))
+            if(isSpecialCharacter(group_name))
             {
-                var JsonData = {"group_name": group_name};
-                
-                JsonData["modules"] = getModuleJson(); ;
-                
-                console.log(JsonData);
-                isgroupsexists(group_name,JsonData, hdngroupid);
-            }else
-                alertmsg('Please enter minimum 5 character', 'WARNING', 'alertmsg10');
+                if( minCharacter(group_name))
+                {
+                    var JsonData = {"group_name": group_name};
+                    JsonData["modules"] = getModuleJson(); ;
+                    isgroupsexists(group_name,JsonData, hdngroupid);
+                }else
+                    alertmsg('Please enter minimum 5 character', 'WARNING', 'alertmsg10');
+                    clear(['hdngroupid','group_name']);
+            }
+            else
+                alertmsg('Please enter proper group name', 'WARNING', 'alertmsg10');
                 clear(['hdngroupid','group_name']);
-
         }else
             alertmsg('Please enter the Alphanumeric, Should start with character only', 'WARNING', 'alertmsg10');
             clear(['hdngroupid','group_name']);
@@ -1734,9 +1813,9 @@ function groupdata(pdata)
     html += '<th scope="col-sm-3"></th><th></th><th></th></tr></thead>';
     if (pdata.length !== 0)
         for (let i = 0; i < pdata.length; i++) {
-            html += '<tr><td>' + pdata[i].group_name + '</td><td><a href="javascript:editgroup(\'' + pdata[i]._id + '\');">Edit</a></td>';
-            html += '<td><a href="javascript:deletegroup(\'' + pdata[i]._id + '\');">Delete</td></tr>';
-            //console.log(pdata,pdata[i]["modules[]"]);
+            html += '<tr><td style="font-size:15px;">' + pdata[i].group_name + '</td><td><a href="javascript:editgroup(\'' + pdata[i]._id + '\');"style="font-size:15px;">Edit</a></td>';
+            html += '<td><a href="javascript:deletegroup(\'' + pdata[i]._id + '\',\'' + pdata[i].group_name + '\');"style="font-size:15px;">Delete</a></td></tr>';
+            
 
         }
     $("#groupReport").html(html);
@@ -1768,17 +1847,28 @@ function editGroupdata(pdata)
     
 }
     
-function deletegroup(Id)
+function deletegroup(Id,pGroupname)
 {
+    var json = {"groupname[]":pGroupname}
     var r = confirm("Are you sure wanted to delete?!");
+    var msgcode,msg;
     if (r == true) 
     {
-        $.get("http://" + IP + ":" + PORT + "/bug/v1/deletegroups/" + Id, function (data, status) {
-                alertmsg('Deleted successfully !', 'DANGER', 'alertmsg10');
-                clear(['hdngroupid', 'group_name']);
-                setModuleUnchecked();
-                displaygroup();
+        $.post("http://" + IP + ":" + PORT + "/bug/v1/deletegroups/" + Id,json, function (data, status) {
+            if(data.status == 400)
+            {
+                msgcode = 'DELETE_GROUP_SUCCESSFULLY';
+                msg = 'SUCCESS'
+            }else if(data.status == 200)
+            {
+                msgcode = 'DELETE_GROUP_UNSUCCESSFULLY';
+                msg = 'DANGER'
+            }
+            $.get("http://" + IP + ":" + PORT + "/bug/v1/getmsg/" + msgcode, function (data, status) {
+                alertmsg(data.message, msg, 'alertmsg10');
+                displaygroup()
             });
+        });
     }else
         alertmsg('You Cancelled', 'DANGER', 'alertmsg10');
         clear(['hdngroupid', 'group_name']);
@@ -1814,7 +1904,7 @@ $.get("http://" + IP + ":" + PORT + "/bug/v1/getmodule" , function(data,status){
 function displayModule(pdata)
 {
     let html = '<thead><tr>';
-    html += '<th><input type="checkbox" name="module" id="checkall"  onClick="checkModule(this)" >Select All</th><th>Modules Name</th><th></th></tr></thead>';
+    html += '<th><input type="checkbox" name="selectall2" id="checkall"  onClick="checkModule(this)" >Select All</th><th>Modules Name</th><th></th></tr></thead>';
     //html += '<tr><td><input type="checkbox" id="checkall">Select All</td></tr>';
     for (let i = 0; i < pdata.length; i++)                      
     { 
@@ -1864,8 +1954,10 @@ function setModuleUnchecked()
 }
  
 function checkModule(source) {
+    let checkedVal = source.checked
     var checkboxes = document.getElementsByName('module');
-    for(var i in checkboxes)
-        checkboxes[i].checked = source.checked;
+    for(var i = 0; i<checkboxes.length; i++)
+        checkboxes[i].checked = checkedVal;
 }
+
 

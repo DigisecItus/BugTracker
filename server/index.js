@@ -256,20 +256,22 @@ app.post('/bug/v1/getrowcount/:collectionname',function(req,res){   /*Created a 
     if(json!== undefined || json!=='')
     {
         let mkey ;
-        if (json.mkey !== undefined && json.mkey !== 'undefined'){
-            mkey = json.mkey;
+        if (json["mkey[]"] !== undefined && json["mkey[]"] !== 'undefined'){
+            mkey = json["mkey[]"];
             console.log("--------------");
             console.log(mkey);
         } else {
-            //console.log("&&&&&&&&&&&&&");
-            //console.log(json)
+            console.log("&&&&&&&&&&&&&");
+            console.log(json)
         }
         //console.log("********json********");
         //console.log(json);
         //console.log("*****mkey*****");
         console.log(mkey);
         let ljson = generateQuery2(json,mkey)
+        console.log("ljson");
         console.log(ljson);
+       
         var MongoClient = require('mongodb').MongoClient({ useNewUrlParser: true});
         var lcollectionname = req.params.collectionname;
         
@@ -277,7 +279,7 @@ app.post('/bug/v1/getrowcount/:collectionname',function(req,res){   /*Created a 
         MongoClient.connect("mongodb://" +IP+ ":27017/local", function(err, db){
             if(err) throw err;
             //console.log("****ljson****");
-            console.log(ljson);
+            //console.log(ljson);
             db.collection(lcollectionname).find(ljson).count( function(err, count){
                 if(err) throw err;
                 db.close();
@@ -341,9 +343,6 @@ app.get('/bug/v1/deleteuser/:_id', function(req,res){     /* API to Delete the u
     deluser(req.params._id,res);
 });
 
-app.get('/bug/v1/deletecategory/:_id', function(req, res){
-    deletecategory(req.params._id, res);
-});
 
 app.get('/bug/v1/deletestatus/:_id', function(req, res){
     deletestatus(req.params._id, res);
@@ -357,9 +356,6 @@ app.get('/bug/v1/deleteos/:_id', function(req,res){
     deleteos(req.params._id, res);
 });
 
-app.get('/bug/v1/deletepriority/:_id', function(req,res){
-    deletepriority(req.params._id, res);
-});
 
 app.get('/bug/v1/deletebug/:_id', function(req,res){
     deletebug(req.params._id, res);
@@ -456,15 +452,9 @@ app.post('/bug/v1/search', function(req,res){
         
             if(laction!== undefined && laction!== '' && ldocid !== undefined && ldocid !== '' )
             {
-                //if(err) res.send({'status':'404'});
-                    if(laction == 'next')
+                if(laction == 'next')
                     {
-                        //console.log('ssss');
-                        //Json = {'_id': {'$gt': ObjectId(pdocid)},"bugid": Json.bugid,"category":Json.category,
-                                                       // "assign" : Json.assign,"status":Json.status};
                         ljson["_id"] = {'$gt': ObjectId(ldocid)};
-                        //ljson = {'_id': {'$gt': ObjectId(ldocid)}, ljson};
-                        console.log(ljson);
                         db.collection("bug").find(ljson).limit(10).toArray(function(err,result){
                             if(err) throw err;
                             db.close(); 
@@ -473,10 +463,7 @@ app.post('/bug/v1/search', function(req,res){
                     } 
                     else if (laction == 'prev')
                     {
-                        //Json = {'_id': {'$lt': ObjectId(pdocid)},"bugid": Json.bugid,"category":Json.category,
-                                                                //"assign" : Json.assign,"status":Json.status};
-                        //console.log(paction);
-                        //console.log('next');
+                        
                         ljson["_id"] = {'$lt': ObjectId(ldocid)};
                         console.log(ljson);
                         db.collection("bug").find(ljson).sort({"_id" : -1}).limit(10).toArray(function(err,result){
@@ -487,6 +474,8 @@ app.post('/bug/v1/search', function(req,res){
                     } 
             }    
             else{
+                console.log("*****")
+                console.log(ljson);
                 db.collection("bug").find(ljson).limit(10).toArray(function(err,result){
                     if(err) throw err;
                     db.close(); 
@@ -557,10 +546,11 @@ function generateQuery(Jsonobj,pMasterJson)
 function generateQuery2(Jsonobj,pMasterJson)
 {
     //var bugobj = JSON.parse(pMasterJson);
+    console.log(typeof pMasterJson);
     var ljson = '';
     for(var i in Jsonobj)
     {   
-        for(var j = 0; j < pMasterJson.length ; j++ )
+        for(var j in pMasterJson )
         {
             if(pMasterJson[j] === i && Jsonobj[i] !== "")
             {
@@ -967,31 +957,24 @@ function getBug(resp,pdocid,paction)
     MongoClient.connect("mongodb://" +IP+ ":27017/local",(err,db) =>{
         ////console.log(err);
         if(err) resp.send({'status':'404'});
-        if ( pdocid === ''){
-            db.collection("bug").find().limit(10)
-            .toArray(function(err,result){
+        if (pdocid === '' || paction === ''){
+            db.collection("bug").find().limit(10).toArray(function(err,result){
                 if(err) throw err;
                 db.close(); 
                 resp.send(result);
             });
-        } else if(paction == 'prev'){
-            console.log(pdocid+'ssss');
+        } else if(paction == 'prev')
+        {
             let json = {'_id': {'$lt': ObjectId(pdocid)}};
-            console.log(json);
-            console.log('jsonssss');
-            db.collection("bug").find(json).sort({'_id': -1}).limit(10)
-            .toArray(function(err,result){
+            db.collection("bug").find(json).sort({'_id': -1}).limit(10).toArray(function(err,result){
                 if(err) throw err;
                 db.close(); 
                 resp.send(result);
             });
-        } else{
+        } else
+        {
             let json = {'_id': {'$gt': ObjectId(pdocid)}};
-            console.log(pdocid);
-            console.log('ssnext');
-
-            db.collection("bug").find(json).limit(10)
-            .toArray(function(err,result){
+            db.collection("bug").find(json).limit(10).toArray(function(err,result){
                 if(err) throw err;
                 db.close(); 
                 resp.send(result);
@@ -1021,22 +1004,36 @@ function deluser(puserid,resp)
 
 }
 
-function deletecategory(pcategoryId, resp)   /*function to delete category */
-{
+
+
+/*function to delete category */
+app.post('/bug/v1/deletecategory/:_id', function(req, res){
+
+    let categoryname = req.body;
+    
+    let pcategoryId = req.params._id;
     
     var MongoClient = require('mongodb').MongoClient({useNewUrlParser : true});
     MongoClient.connect("mongodb://" +IP+ ":27017/local",(err, db)=>{
-    
-    //console.log(pcategoryId)
-    db.collection("category").deleteOne({"_id": ObjectId(pcategoryId)} ,function(err, result){
-        if (err) throw err;
-            //console.log("1 document deleted");
-            db.close(); 
-            resp.send({"result":result});
-    
-        });
+
+        db.collection('bug').find(categoryname).toArray(function(err,count){
+            if(err)throw err;
+            if(count == 0)
+            {
+                db.collection("category").deleteOne({"_id": ObjectId(pcategoryId)} ,function(err, result){
+                    if (err) throw err;
+                    db.close(); 
+                    res.send({"status":400});
+                });
+            }
+            else{
+                    db.close(); 
+                    res.send({"status":200});
+                }
+            })
     });
-}
+
+});
 
 function deletestatus(pstatusId, resp)   /*function to delete status*/
 {
@@ -1086,20 +1083,35 @@ function deleteos(posid, resp)   /*function to delete OS*/
 
 }
 
-function deletepriority(lpriorityid, resp)  /*function to delete priority */
-{
+/*function to delete priority */
+app.post('/bug/v1/deletepriority/:_id', function(req,res){
+    
+
+    let lpriorityid = req.params._id;
+    let priorityname = req.body;
+    
     var MongoClient = require('mongodb').MongoClient({useNewUrlParser : true});
     MongoClient.connect("mongodb://" +IP+ ":27017/local",(err,db) =>{
 
-    db.collection("priority").deleteOne({"_id": ObjectId(lpriorityid)}, function(err, result){
-        if(err) throw err;
-            //console.log("1 document deleted");
-            db.close(); 
-            resp.send({"result":result});
+        db.collection('bug').find(priorityname).toArray(function(err,count){
+            if(err)throw err;
+            if(count == 0)
+            {
+                db.collection("priority").deleteOne({"_id": ObjectId(lpriorityid)}, function(err, result){
+                    if(err) throw err;
+                    db.close(); 
+                    res.send({"status":400});
+                });
+            }
+            else
+            {
+                db.close(); 
+                res.send({"status":200});
+            }
         });
     });
 
-}
+});
 
 function deletebug(pbugid, resp)
 {
@@ -1320,10 +1332,7 @@ function updateBug(pbugid,pJSON,presp)
                     //var lJSON = pJSON;
                     pJSON["status"] = "STATUS_CHANGE";
                     pJSON["message"] = data.STATUS_CHANGE_MSG;
-                    //logDetails(pJSON,presp);
-                    //presp.send({"msgcode" : "STATUS_CHANGED"});
-
-                    //resp.send(data.STATUS_CHANGE);
+                   
                     
                 }
 
@@ -1340,18 +1349,7 @@ function updateBug(pbugid,pJSON,presp)
 }
 
 
-/*function search(pword,resp){
-    var MongoClient = require('mongodb').MongoClient({useNewUrlParser : true});
-    MongoClient.connect("mongodb://" +IP+ ":27017/local", (err,db) =>{
-        db.collection("bug").find({"status" : pword}).toArray(function(err,result){
-            if(err) throw err;
-            ////console.log(result);
-            //console.log("ssssss");
-            db.close();
-            resp.send(result);
-        });
-    });
-}*/
+
 
 /*function logDetails(pJSON,presp)
 {
@@ -1492,13 +1490,13 @@ app.post('/bug/v1/deletemodule/:id', function(req,res){
                 db.collection("module").deleteOne({"_id": ObjectId(moduleid)} ,function(err, result){
                     if (err) throw err;
                     db.close(); 
-                    res.send({"msgcode" : "DELETE_MODULE_SUCCESSFULLY"});
+                    res.send({"status" : 400});
                 });
             }
             else
             {
                 db.close();
-                res.send({"msgcode" : "DELETE_MODULE_UNSUCCESSFULLY"});
+                res.send({"status" : 200});
             }
 
         })
@@ -1640,20 +1638,31 @@ function updategroup(pid,pjson,presp)
     });
 }
 
-app.get('/bug/v1/deletegroups/:id',(req,res)=>{
+app.post('/bug/v1/deletegroups/:id',(req,res)=>{
 
+    let groups = req.body;
     let groupsid = req.params.id
     var MongoClient = require('mongodb').MongoClient({useNewUrlParser : true});
-    //console.log(groupsid);
+
     
     MongoClient.connect("mongodb://" +IP+ ":27017/local",(err, db)=>{
-            
-        db.collection('groups').deleteOne({"_id": ObjectId(groupsid)} ,function(err, result){
-            if (err) throw err;
-                db.close(); 
-                res.send({"send":200});
-            });
-        });
+        
+        db.collection('user').find(groups).count(function(err,count){
+            if(err)throw err;
+            if(count == 0)
+            {
+                db.collection('groups').deleteOne({"_id": ObjectId(groupsid)} ,function(err, result){
+                    if (err) throw err;
+                    db.close(); 
+                    res.send({"status":400});
+                });
+            }
+            else{
+                db.close();
+                res.send({"status":200})
+            }
+        })
+    });
     
 });
 

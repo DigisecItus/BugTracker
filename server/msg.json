@@ -5,7 +5,15 @@
     "ASSIGN_CHANGE_MSG" : "`Assign changes from ${olduser} to ${newuser}.`",
     "BUG_UPDATED" : "Bug updated successfully.",
     "DELETE_MODULE_SUCCESSFULLY" : "Module deleted successfully",
-    "DELETE_MODULE_UNSUCCESSFULLY" : "This module cannot be delete"
+    "DELETE_MODULE_UNSUCCESSFULLY" : "This module cannot be delete, It is already using by Groups",
+    "DELETE_GROUP_SUCCESSFULLY" : "Group deleted successfully",
+    "DELETE_GROUP_UNSUCCESSFULLY" : "This Group cannot be delete, It is already using by User",
+    "DELETE_CATEGORY_SUCCESSFULLY" : "Category deleted successfully",
+    "DELETE_CATEGORY_UNSUCCESSFULLY" : "This Category cannot be delete, It is already using by Bug",
+    "DELETE_PRIORITY_SUCCESSFULLY":    "Priority deleted successfully",
+    "DELETE_PRIORITY_UNSUCCESSFULLY" : "This Priority cannot be delete, It is already using by Bug"
+
+
 
     
 }
